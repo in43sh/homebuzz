@@ -8,6 +8,14 @@ presented as **options** for you to choose.
 - **Figma:** https://www.figma.com/design/XapEJYnL4l2NFiUIEspMCL/BuildStore_new--Copy-?node-id=2-7089&p=f&m=dev
 - **Date:** 2026-06-04
 
+## TL;DR
+
+Three stale repos (CRA frontend, Go API, Vite frontend) → one clean build. Recommended:
+**Next.js 16 + Drizzle + Neon + Auth.js on Vercel**, shipped as **Slice 2** (catalog +
+cart + auth) for v1, then Slice 3 (checkout/orders/reviews/admin). Design + 9 screens
+already in Figma; tokens and 15 categories extracted. **Two decisions unblock build:
+architecture (§4) + scope (§5).** Defaults stand if you don't object.
+
 ---
 
 ## 1. What exists today
@@ -57,6 +65,28 @@ display type, large product imagery.
 | **Account page** (2 variants) | User account |
 | **Privacy** | Static content page |
 | **404 / 405 / 406 / 407** | Error pages |
+
+### Screen layouts (from Figma, key screens)
+
+Shared chrome on every screen: dark top bar (logo, nav, search, account, cart) +
+category nav strip · `delivery` "WE DELIVER" banner · `prefooter` · `footer`.
+
+- **Store — Product list** (`Paint` example): sticky category nav; page title + search;
+  **left filter sidebar** (brand / price / type facets); **4-col product grid** of
+  `product-list-item` cards (image, stars, title, price/unit, yellow add-to-cart, "On
+  Sale" badge); "Show more" pagination; promo banners (15% off, Financing) below grid.
+- **Store — Product details (PDP)**: large product image + brand badge; title; price;
+  **unit/variant selector + color swatches + quantity stepper + add-to-cart**;
+  description; lifestyle image gallery (3); **Reviews** (star summary + list + load
+  more); **"You Might Also Need"** related grid (4).
+- **Cart**: title + item count; line-item **table** (image+title · price · quantity
+  stepper · remove trash); summary (tax + total) + dark **Checkout** button.
+- **Account** (2 variants): profile details + order history list.
+- **Login / Sign up**: form using `inputs/small/text` (email, password) + primary
+  button; sign-in ↔ sign-up toggle. (Renders over the home layout — treat as a
+  dedicated route or modal.)
+- **Home**: hero banner, 2M-items strip, Popular Products grid, promo banners, Tutorials.
+- **Privacy / 404–407**: static content + error states.
 
 ### Design system (Figma component naming → maps cleanly to code components)
 
@@ -129,6 +159,11 @@ Review      id, product_id, user_id, rating, body, created_at
 
 Start with the subset your chosen **scope** (section 5) requires; design the schema for
 the full set so migrations stay additive.
+
+> **Note:** the PDP shows unit/variant + color swatches. If products have real variants
+> (color, size), add a `ProductVariant` table (product_id, name, value, price_delta,
+> stock, image_id) and point `CartItem`/`OrderItem` at variant, not product. Skip if v1
+> products are single-variant.
 
 **Seed data:** reuse the 15 categories + category icons and the product images already in
 `homebuzz/src/img/` and `homebuzz-frontend/src/assets/images/products/`. Write a
