@@ -307,6 +307,13 @@ milestone / demo checkpoint inside Slice 2.
   purchased product; admin can CRUD products with image upload; (payment succeeds in
   Stripe test mode).
 
+### Explicitly out of scope (v1)
+
+Wishlists/favorites · multi-currency/i18n · promo/coupon codes · inventory reservation ·
+shipping-rate calc & tax service · email notifications beyond auth · product Q&A ·
+recommendations engine · CMS for tutorials/banners (hardcode/seed first) · mobile app.
+Park these in a backlog; don't let them grow v1.
+
 ---
 
 ## 6. Best-practices checklist
@@ -354,6 +361,16 @@ milestone / demo checkpoint inside Slice 2.
 ## 7. Phased roadmap
 
 > Assumes Option B (Next.js). Adjust runtime steps for A/C; the sequence holds.
+> Estimates are solo-dev rough order-of-magnitude, not commitments.
+
+| Phase | Focus | Rough effort |
+|-------|-------|------|
+| 0 | Foundation | 2–3 days |
+| 1 | Design system | 3–5 days |
+| 2 | Slice 1 (catalog browse) | 3–5 days |
+| 3 | Slice 2 (cart + auth) | 5–8 days |
+| 4 | Slice 3 (full commerce) | 8–12 days |
+| 5 | Hardening | 3–5 days |
 
 **Phase 0 — Foundation**
 - Scaffold app (Next.js App Router + TS + Tailwind 4).
@@ -436,5 +453,4 @@ First commands once decided:
 ```bash
 npx create-next-app@latest homebuzz --typescript --tailwind --app --eslint
 # then: shadcn init, drizzle + neon, auth.js, tokens → tailwind theme, base layout
-```
 ```
