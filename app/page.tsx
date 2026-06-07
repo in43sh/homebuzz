@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { getProducts } from "@/lib/mock-products";
+import { ProductGrid } from "@/components/store/ProductGrid";
 
 export default function Home() {
+  const popular = getProducts().slice(0, 8);
   return (
     <>
       {/* Hero */}
@@ -25,6 +28,19 @@ export default function Home() {
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* Popular products */}
+      <section className="mx-auto max-w-7xl px-4 py-16">
+        <div className="mb-8 flex items-end justify-between">
+          <h2 className="text-heading font-black text-ink-900">
+            Popular Products
+          </h2>
+          <Link href="/store" className="text-sm font-bold hover:text-slate-700">
+            View all →
+          </Link>
+        </div>
+        <ProductGrid products={popular} />
       </section>
 
       {/* Delivery banner */}
