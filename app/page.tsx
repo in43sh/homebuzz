@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { getProducts } from "@/lib/mock-products";
 import { ProductGrid } from "@/components/store/ProductGrid";
+import { Button } from "@/components/ui/Button";
+import { ItemsStrip } from "@/components/blocks/ItemsStrip";
+import { PromoBanners } from "@/components/blocks/PromoBanners";
+import { Tutorials } from "@/components/blocks/Tutorials";
+import { DeliveryBanner } from "@/components/blocks/DeliveryBanner";
 
 export default function Home() {
   const popular = getProducts().slice(0, 8);
@@ -20,15 +25,12 @@ export default function Home() {
             delivered fast, efficient and free.
           </p>
           <div>
-            <Link
-              href="/store"
-              className="inline-block rounded-md bg-brand px-6 py-3 font-bold text-ink-900 hover:brightness-95"
-            >
-              Shop the store
-            </Link>
+            <Button href="/store">Shop the store</Button>
           </div>
         </div>
       </section>
+
+      <ItemsStrip />
 
       {/* Popular products */}
       <section className="mx-auto max-w-7xl px-4 py-16">
@@ -43,15 +45,9 @@ export default function Home() {
         <ProductGrid products={popular} />
       </section>
 
-      {/* Delivery banner */}
-      <section className="bg-brand">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 py-12 text-center">
-          <h2 className="text-heading font-black text-white">WE DELIVER</h2>
-          <p className="text-lg font-bold text-ink-900">
-            Fast. Efficient. Free.
-          </p>
-        </div>
-      </section>
+      <PromoBanners />
+      <Tutorials />
+      <DeliveryBanner />
     </>
   );
 }
