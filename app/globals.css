@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — sourced from Figma (BuildStore_new).
+ * Colors and type scale map 1:1 to the Figma variables.
+ */
+@theme {
+  /* Brand + neutrals */
+  --color-slate-700: #353b3e; /* primary dark surface */
+  --color-ink-900: #1b1e1f; /* near-black text / footer */
+  --color-gray-500: #879095; /* muted text */
+  --color-gray-200: #cfd7dc; /* borders / light surfaces */
+  --color-brand: #ffce3a; /* yellow accent / CTA */
+  --color-white: #ffffff;
+
+  /* Semantic aliases */
+  --color-background: #ffffff;
+  --color-foreground: #1b1e1f;
+
+  /* Type — Inter (loaded in layout.tsx) */
+  --font-sans: var(--font-inter), Arial, Helvetica, sans-serif;
+
+  /* Display sizes from Figma (H1 70/900, H3 36/900) */
+  --text-display: 4.375rem; /* 70px */
+  --text-display--line-height: 1;
+  --text-display--font-weight: 900;
+  --text-heading: 2.25rem; /* 36px */
+  --text-heading--line-height: 1;
+  --text-heading--font-weight: 900;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
