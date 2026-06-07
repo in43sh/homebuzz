@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { categories } from "@/lib/categories";
+import { CartLink } from "@/components/cart/CartLink";
 
 export function Header() {
   return (
@@ -34,9 +35,7 @@ export function Header() {
           <Link href="/signin" className="hover:text-brand">
             Account
           </Link>
-          <Link href="/cart" className="hover:text-brand">
-            Cart
-          </Link>
+          <CartLink />
         </nav>
       </div>
 

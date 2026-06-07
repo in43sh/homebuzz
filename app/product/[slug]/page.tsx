@@ -9,8 +9,8 @@ import {
 import { Stars } from "@/components/store/Stars";
 import { PricePer } from "@/components/store/PricePer";
 import { ProductGrid } from "@/components/store/ProductGrid";
-import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { ProductPurchase } from "@/components/cart/ProductPurchase";
 
 export function generateStaticParams() {
   return products.map((p) => ({ slug: p.slug }));
@@ -65,26 +65,8 @@ export default async function ProductPage({
           <PricePer price={product.price} unit={product.unit} />
           <p className="text-gray-500">{product.description}</p>
 
-          <div className="mt-2 flex items-center gap-3">
-            <label htmlFor="qty" className="text-sm font-bold text-ink-900">
-              Quantity
-            </label>
-            <select
-              id="qty"
-              className="h-10 rounded-md border border-gray-200 bg-white px-3 text-sm"
-              defaultValue={1}
-            >
-              {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="mt-2 flex gap-3">
-            <Button variant="default">Add to cart</Button>
-            <Button variant="outline">Buy now</Button>
+          <div className="mt-2">
+            <ProductPurchase product={product} />
           </div>
         </div>
       </div>

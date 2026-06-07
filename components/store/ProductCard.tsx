@@ -3,8 +3,8 @@ import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { Stars } from "./Stars";
 import { PricePer } from "./PricePer";
-import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
 
 export function ProductCard({ product }: { product: Product }) {
   return (
@@ -35,9 +35,7 @@ export function ProductCard({ product }: { product: Product }) {
 
       <PricePer price={product.price} unit={product.unit} className="mt-auto" />
 
-      <Button size="small" variant="default" className="mt-3 w-full">
-        Add to cart
-      </Button>
+      <AddToCartButton product={product} fullWidth className="mt-3" />
     </article>
   );
 }
