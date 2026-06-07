@@ -165,6 +165,11 @@ the full set so migrations stay additive.
 > stock, image_id) and point `CartItem`/`OrderItem` at variant, not product. Skip if v1
 > products are single-variant.
 
+**Indexes (for the §6 perf bars):** unique on `User.email`, `Product.slug`,
+`Category.slug`; index `Product.category_id` (list filter) and `Cart.user_id`; a
+trigram/`pg_trgm` or full-text index on `Product.title` (+ description) for search.
+Add as the queries land, not all upfront.
+
 **Seed data:** reuse the 15 categories + category icons and the product images already in
 `homebuzz/src/img/` and `homebuzz-frontend/src/assets/images/products/`. Write a
 `db/seed` script so dev/test DBs are reproducible.
@@ -413,6 +418,20 @@ homebuzz/
   db/                  # schema, migrations, seed
   styles/              # tailwind theme / tokens
   tests/               # unit, integration, e2e
+```
+
+### Environment variables (`.env.example`)
+
+```bash
+DATABASE_URL=                 # Neon pooled connection string
+AUTH_SECRET=                  # openssl rand -base64 32
+AUTH_GOOGLE_ID=               # OAuth (optional)
+AUTH_GOOGLE_SECRET=
+BLOB_READ_WRITE_TOKEN=        # Vercel Blob (product/admin images)
+STRIPE_SECRET_KEY=            # Slice 3
+STRIPE_WEBHOOK_SECRET=        # Slice 3
+SENTRY_DSN=                   # Slice 2+
+NEXT_PUBLIC_SITE_URL=         # canonical URL for metadata/sitemap
 ```
 
 ---
