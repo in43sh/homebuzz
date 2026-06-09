@@ -236,7 +236,7 @@ erDiagram
 | `rating_count` | integer not null default `0` | Denormalized |
 | `stock` | integer not null default `0` | Decremented atomically at checkout; oversell is rejected (§6.4) |
 | `sku` | text nullable | |
-| `image` | text not null default `''` | Primary image path |
+| `image` | text not null default `''` | Primary image path; admin input requires a non-empty local `/…` path (§15) |
 | `on_sale` | boolean not null default `false` | Sale items sort first |
 | `category_id` | integer not null → `categories.id` `ON DELETE restrict` | |
 | `created_at` / `updated_at` | timestamp not null default now | `updated_at` set manually on update |
@@ -335,7 +335,7 @@ Lives in [lib/cart.ts](lib/cart.ts); mutations exposed via [app/actions/cart.ts]
 
 ### 6.5 Admin product management
 
-[lib/admin.ts](lib/admin.ts) (server-only) + [app/actions/admin.ts](app/actions/admin.ts). `isAdmin()` gates every operation. `createProduct`/`updateProduct` derive a unique slug via `uniqueSlug` (slugify the title; on collision append the last 5 digits of `Date.now()`). `saveProductAction` validates with `productSchema`, then `revalidateCatalog()` busts `/admin/products`, `/store`, and `/`. There is no admin order or user management — products only.
+[lib/admin.ts](lib/admin.ts) (server-only) + [app/actions/admin.ts](app/actions/admin.ts). `isAdmin()` gates every operation. `createProduct`/`updateProduct` derive a unique slug via `uniqueSlug` (slugify the title; on collision append the last 5 digits of `Date.now()`). `saveProductAction` validates with `productSchema`, then `revalidateCatalog()` busts `/admin/products`, `/store`, and `/`. `deleteProductAction` catches the `order_items` FK violation and returns a friendly error for products that have been ordered (§15). There is no admin order or user management — products only.
 
 ### 6.6 Catalog queries
 
@@ -389,7 +389,7 @@ Navigation: persistent `Header`/`Footer` in the root layout; `MobileMenu` for sm
 
 | Level | Tool | Location | Count | Covers |
 | ------- | ------ | ---------- | ------- | -------- |
-| Unit | Vitest (node env) | [tests/unit/](tests/unit/) | 18 tests / 3 files | `slugify` + categories, `cn`/`formatPrice` utils, all Zod schemas |
+| Unit | Vitest (node env) | [tests/unit/](tests/unit/) | 19 tests / 3 files | `slugify` + categories, `cn`/`formatPrice` utils, all Zod schemas (incl. the local-image-path rule) |
 | E2E | Playwright (Chromium) | [tests/e2e/shop.spec.ts](tests/e2e/shop.spec.ts) | 3 tests | Browse catalog, search `?q=drill`, add-to-cart → cart total |
 
 Playwright auto-starts `npm run dev` (`reuseExistingServer: true`) and hits `http://localhost:3000`. Runs are serial (`fullyParallel: false`), no retries.
@@ -470,7 +470,7 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 - **Cookies:** the guest `cart_token` is `httpOnly`, `sameSite: lax`, path `/`, 30-day max-age.
 - **SQL injection:** all queries go through Drizzle's parameterized builder (including `ilike` search terms).
 - **Reviews are purchase-gated:** `upsertReview` rejects users without a matching `order_items` row (§6.3), and the PDP hides the form from non-purchasers via `canReview`.
-- **Image paths are constrained** to local `/public` paths by `productSchema` so admin input can't point `next/image` at an unconfigured remote host (§15).
+- **Image paths are required and constrained** to local `/public` paths by `productSchema` so admin input can't leave `next/image` with an empty `src` or point it at an unconfigured remote host (§15).
 - **Signup race:** `registerUser` does a read-then-insert duplicate-email check, and additionally catches the unique-violation (SQLSTATE `23505`) from `users_email_idx` so two concurrent signups can't both succeed.
 
 ---
@@ -499,6 +499,8 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 - **`product_images` and `categories.parent_id` exist but are unused** by the current UI — tables/columns reserved for future galleries and subcategories.
 - **Product images must be local `/public` paths.** [next.config.ts](next.config.ts) declares no `images.remotePatterns`, so a remote URL would crash `next/image`. `productSchema` ([lib/validation.ts](lib/validation.ts)) now rejects any `image` that isn't empty or doesn't start with `/`, so the admin form can't introduce one — but a path written straight to the DB (seed/SQL) still must point under `/public/products/…`.
 - **Category nav comes from the DB but there's no category CRUD.** `Header`/`MobileMenu`/`CategorySidebar`/`/store/[category]` all read `getCategories()` (the `categories` table) — but rows are only ever created by the seed; there is no admin UI to add/rename/delete a category. `lib/categories.ts` is now seed-and-`slugify`-only; don't wire it back into nav.
+- **Deleting an ordered product is blocked, gracefully.** `order_items.product_id` is `ON DELETE restrict`, so a product that's been ordered can't be hard-deleted. `deleteProductAction` ([app/actions/admin.ts](app/actions/admin.ts)) catches the FK violation (`23503`) and returns `{ ok: false, error }`, which [DeleteProductButton](components/admin/DeleteProductButton.tsx) surfaces via `alert`. (`cart_items` and `reviews` cascade; only `order_items` blocks.) There's still no soft-delete/archive — an ordered product can only be edited, not removed.
+- **Product images must be a non-empty local path.** `next/image` throws on an empty `src` and on remote hosts (no `images.remotePatterns`). `productSchema` ([lib/validation.ts](lib/validation.ts)) now **requires** `image` and rejects anything not starting with `/`. As defense-in-depth, every render site (ProductCard, PDP, cart, order detail) guards `image &&` and shows a "No image" placeholder, so a legacy blank row can't crash a page.
 
 ---
 
@@ -525,4 +527,5 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 4. **Background work to accompany payments.** Payment webhooks and transactional email (order confirmations) — none exist today.
 5. **Product image uploads + galleries.** Add real uploads (or configure `images.remotePatterns`) so images aren't limited to hand-placed `/public` files, then use the existing `product_images` table for PDP galleries.
 6. **Category management + subcategories.** Nav is DB-driven (`getCategories`), but there's no admin CRUD for categories and `categories.parent_id` is still unused — add a management UI and wire subcategories.
-7. **Test coverage for the untested paths** in §9 (auth, checkout, reviews, admin, cart merge).
+7. **Soft-delete products.** Deleting an ordered product is currently just blocked (§15); an `archived` flag would let admins retire a product while preserving order history.
+8. **Test coverage for the untested paths** in §9 (auth, checkout, reviews, admin, cart merge).

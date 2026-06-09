@@ -52,14 +52,20 @@ export default async function ProductPage({
           {product.onSale && (
             <Badge className="absolute left-3 top-3 z-10">On Sale</Badge>
           )}
-          <Image
-            src={product.image}
-            alt={product.title}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-contain p-8"
-            priority
-          />
+          {product.image ? (
+            <Image
+              src={product.image}
+              alt={product.title}
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-contain p-8"
+              priority
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center text-sm text-gray-500">
+              No image
+            </span>
+          )}
         </div>
 
         {/* Details */}

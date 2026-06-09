@@ -39,8 +39,28 @@ export async function saveProductAction(
   redirect("/admin/products");
 }
 
-export async function deleteProductAction(id: number): Promise<void> {
+export type DeleteResult = { ok: true } | { ok: false; error: string };
+
+export async function deleteProductAction(id: number): Promise<DeleteResult> {
   if (!(await isAdmin())) redirect("/");
-  await deleteProduct(id);
+  try {
+    await deleteProduct(id);
+  } catch (e) {
+    // order_items.product_id is ON DELETE restrict — a product that's been
+    // ordered can't be hard-deleted (SQLSTATE 23503).
+    if (
+      e &&
+      typeof e === "object" &&
+      "code" in e &&
+      (e as { code?: string }).code === "23503"
+    ) {
+      return {
+        ok: false,
+        error: "This product has been ordered and can't be deleted.",
+      };
+    }
+    throw e;
+  }
   revalidateCatalog();
+  return { ok: true };
 }

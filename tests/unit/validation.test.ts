@@ -64,6 +64,7 @@ describe("productSchema", () => {
       title: "Hammer",
       price: "12.50",
       categoryId: "3",
+      image: "/products/hammer.png",
     });
     expect(res.success).toBe(true);
     if (res.success) {
@@ -73,6 +74,21 @@ describe("productSchema", () => {
       expect(res.data.stock).toBe(0);
       expect(res.data.onSale).toBe(false);
     }
+  });
+
+  it("requires a local image path", () => {
+    const base = { title: "Hammer", price: "5", categoryId: "1" };
+    // missing / empty image is rejected
+    expect(productSchema.safeParse(base).success).toBe(false);
+    expect(productSchema.safeParse({ ...base, image: "" }).success).toBe(false);
+    // remote URL is rejected (no next/image remotePatterns configured)
+    expect(
+      productSchema.safeParse({ ...base, image: "https://x.com/a.png" }).success,
+    ).toBe(false);
+    // local public path is accepted
+    expect(
+      productSchema.safeParse({ ...base, image: "/products/h.png" }).success,
+    ).toBe(true);
   });
 
   it("rejects a non-positive price", () => {

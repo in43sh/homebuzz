@@ -16,13 +16,19 @@ export function ProductCard({ product }: { product: Product }) {
         {product.onSale && (
           <Badge className="absolute left-2 top-2 z-10">On Sale</Badge>
         )}
-        <Image
-          src={product.image}
-          alt={product.title}
-          fill
-          sizes="(max-width: 768px) 50vw, 25vw"
-          className="object-contain p-4 transition-transform group-hover:scale-105"
-        />
+        {product.image ? (
+          <Image
+            src={product.image}
+            alt={product.title}
+            fill
+            sizes="(max-width: 768px) 50vw, 25vw"
+            className="object-contain p-4 transition-transform group-hover:scale-105"
+          />
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center text-xs text-gray-500">
+            No image
+          </span>
+        )}
       </Link>
 
       <Stars rating={product.rating} count={product.ratingCount} className="mb-1" />

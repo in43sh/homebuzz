@@ -54,13 +54,15 @@ export default async function OrderDetailPage({
               href={`/product/${item.slug}`}
               className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-gray-200"
             >
-              <Image
-                src={item.image}
-                alt={item.title}
-                fill
-                sizes="80px"
-                className="object-contain p-2"
-              />
+              {item.image && (
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  sizes="80px"
+                  className="object-contain p-2"
+                />
+              )}
             </Link>
             <div className="flex flex-1 flex-col">
               <Link
