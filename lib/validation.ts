@@ -17,3 +17,10 @@ export const signUpSchema = signInSchema
 
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
+
+export const reviewSchema = z.object({
+  rating: z.coerce.number().int().min(1, "Pick a rating").max(5),
+  body: z.string().max(1000).optional(),
+});
+
+export type ReviewValues = z.infer<typeof reviewSchema>;
