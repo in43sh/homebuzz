@@ -24,3 +24,17 @@ export const reviewSchema = z.object({
 });
 
 export type ReviewValues = z.infer<typeof reviewSchema>;
+
+export const productSchema = z.object({
+  title: z.string().min(2, "Title is required"),
+  description: z.string().max(2000).optional().default(""),
+  price: z.coerce.number().positive("Price must be greater than 0"),
+  unit: z.string().min(1).default("each"),
+  categoryId: z.coerce.number().int().positive("Pick a category"),
+  image: z.string().default(""),
+  stock: z.coerce.number().int().min(0).default(0),
+  onSale: z.coerce.boolean().default(false),
+});
+
+export type ProductValues = z.infer<typeof productSchema>;
+export type ProductInput = z.input<typeof productSchema>;

@@ -39,6 +39,14 @@ export async function Header() {
         <nav className="ml-auto flex items-center gap-5 text-sm font-medium">
           {session?.user ? (
             <>
+              {session.user.role === "admin" && (
+                <Link
+                  href="/admin/products"
+                  className="hidden text-brand hover:underline sm:inline"
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/account"
                 className="hidden hover:text-brand sm:inline"
