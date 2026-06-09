@@ -25,7 +25,21 @@ export async function registerUser(values: unknown): Promise<RegisterResult> {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await db.insert(users).values({ name, email, passwordHash });
+  try {
+    await db.insert(users).values({ name, email, passwordHash });
+  } catch (e) {
+    // Race backstop: two concurrent signups pass the check above, then the
+    // unique index (users_email_idx) rejects the second insert (SQLSTATE 23505).
+    if (
+      e &&
+      typeof e === "object" &&
+      "code" in e &&
+      (e as { code?: string }).code === "23505"
+    ) {
+      return { ok: false, error: "An account with that email already exists" };
+    }
+    throw e;
+  }
 
   return { ok: true };
 }

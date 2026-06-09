@@ -2,15 +2,19 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getCart } from "@/lib/cart";
+import { TAX_RATE } from "@/lib/orders";
 import { Button } from "@/components/ui/Button";
 import { CartItemControls, CartFooter } from "@/components/cart/CartControls";
 import { formatPrice } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Shopping cart" };
 
-const TAX_RATE = 0.08;
-
-export default async function CartPage() {
+export default async function CartPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const { items, subtotal, count } = await getCart();
 
   if (items.length === 0) {
@@ -36,6 +40,13 @@ export default async function CartPage() {
         <h1 className="text-heading font-black text-ink-900">Shopping cart</h1>
         <span className="text-sm text-gray-500">{count} items</span>
       </div>
+
+      {error === "stock" && (
+        <p className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Some items are no longer in stock in the quantity you wanted. Adjust
+          the amounts and try again.
+        </p>
+      )}
 
       <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
         <ul className="divide-y divide-gray-200 border-y border-gray-200">
