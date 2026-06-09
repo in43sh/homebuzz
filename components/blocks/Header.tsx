@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { categories } from "@/lib/categories";
 import { CartLink } from "@/components/cart/CartLink";
+import { MobileMenu } from "./MobileMenu";
 
 export function Header() {
   return (
     <header className="bg-slate-700 text-white">
       {/* Top bar */}
-      <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-4">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 md:gap-6">
+        <MobileMenu />
         <Link href="/" className="text-2xl font-black tracking-tight">
           home<span className="text-brand">buzz</span>
         </Link>
@@ -32,15 +34,15 @@ export function Header() {
         </form>
 
         <nav className="ml-auto flex items-center gap-5 text-sm font-medium">
-          <Link href="/signin" className="hover:text-brand">
+          <Link href="/account" className="hidden hover:text-brand sm:inline">
             Account
           </Link>
           <CartLink />
         </nav>
       </div>
 
-      {/* Category strip */}
-      <nav aria-label="Categories" className="bg-ink-900">
+      {/* Category strip (desktop only; mobile uses the drawer) */}
+      <nav aria-label="Categories" className="hidden bg-ink-900 md:block">
         <ul className="mx-auto flex max-w-7xl flex-wrap gap-x-5 gap-y-1 px-4 py-2 text-sm text-gray-200">
           {categories.map((c) => (
             <li key={c.slug}>
