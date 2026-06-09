@@ -3,6 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { Button } from "@/components/ui/Button";
+import { getOrders } from "@/lib/orders";
+import { formatPrice } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Your account" };
 
@@ -11,9 +13,7 @@ export default async function AccountPage() {
   if (!session?.user) redirect("/signin");
 
   const { name, email, role } = session.user;
-  // Orders land in Slice 3 (checkout). Empty for now.
-  const orders: { id: string; date: string; total: string; status: string }[] =
-    [];
+  const orders = await getOrders();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
@@ -68,16 +68,26 @@ export default async function AccountPage() {
               {orders.map((o) => (
                 <li
                   key={o.id}
-                  className="flex items-center justify-between px-4 py-3 text-sm"
+                  className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
                 >
-                  <Link
-                    href={`/account/orders/${o.id}`}
-                    className="font-bold text-ink-900 hover:text-slate-700"
-                  >
-                    Order #{o.id}
-                  </Link>
-                  <span className="text-gray-500">{o.status}</span>
-                  <span className="font-black text-ink-900">{o.total}</span>
+                  <div>
+                    <Link
+                      href={`/account/orders/${o.id}`}
+                      className="font-bold text-ink-900 hover:text-slate-700"
+                    >
+                      Order #{o.id}
+                    </Link>
+                    <p className="text-gray-500">
+                      {o.createdAt.toLocaleDateString()} · {o.itemCount} item
+                      {o.itemCount === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <span className="rounded bg-gray-200 px-2 py-0.5 text-xs font-bold uppercase text-ink-900">
+                    {o.status}
+                  </span>
+                  <span className="font-black text-ink-900">
+                    {formatPrice(o.total)}
+                  </span>
                 </li>
               ))}
             </ul>

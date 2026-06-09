@@ -7,6 +7,7 @@ import {
   removeItemAction,
   clearCartAction,
 } from "@/app/actions/cart";
+import { placeOrderAction } from "@/app/actions/orders";
 
 export function CartItemControls({
   productId,
@@ -65,9 +66,10 @@ export function CartFooter() {
       <Button
         variant="warning"
         className="mt-6 w-full"
-        onClick={() => alert("Checkout arrives in Slice 3 (Stripe).")}
+        disabled={pending}
+        onClick={() => startTransition(async () => placeOrderAction())}
       >
-        Checkout
+        {pending ? "Placing order…" : "Checkout"}
       </Button>
       <button
         disabled={pending}
@@ -76,6 +78,9 @@ export function CartFooter() {
       >
         Clear cart
       </button>
+      <p className="mt-3 text-center text-xs text-gray-500">
+        Demo checkout — no payment is taken. Stripe lands later.
+      </p>
     </>
   );
 }
