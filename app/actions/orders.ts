@@ -8,9 +8,13 @@ export async function placeOrderAction() {
   const result = await placeOrder();
 
   if (!result.ok) {
-    redirect(result.reason === "unauthenticated" ? "/signin" : "/cart");
+    if (result.reason === "unauthenticated") redirect("/signin");
+    if (result.reason === "out_of_stock") redirect("/cart?error=stock");
+    redirect("/cart");
   }
 
+  // Stock changed — refresh the cart count and any cached catalog views.
   revalidatePath("/", "layout");
+  revalidatePath("/store");
   redirect(`/account/orders/${result.id}`);
 }
