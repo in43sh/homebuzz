@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -10,6 +12,7 @@ import {
   type SignInValues,
   type SignUpValues,
 } from "@/lib/validation";
+import { registerUser } from "@/app/actions/auth";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -35,7 +38,8 @@ function Field({
 
 export function AuthForm({ mode }: { mode: Mode }) {
   const isSignUp = mode === "signup";
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
+  const [formError, setFormError] = useState<string | null>(null);
 
   const form = useForm<SignUpValues | SignInValues>({
     resolver: zodResolver(isSignUp ? signUpSchema : signInSchema),
@@ -46,11 +50,30 @@ export function AuthForm({ mode }: { mode: Mode }) {
     formState: { errors, isSubmitting },
   } = form;
 
-  // NOTE: real auth (Auth.js) lands in Phase 2 with the database.
-  // For now this validates and simulates a successful submit.
-  const onSubmit = handleSubmit(async () => {
-    await new Promise((r) => setTimeout(r, 400));
-    setSubmitted(true);
+  const onSubmit = handleSubmit(async (values) => {
+    setFormError(null);
+
+    if (isSignUp) {
+      const result = await registerUser(values);
+      if (!result.ok) {
+        setFormError(result.error);
+        return;
+      }
+    }
+
+    const res = await signIn("credentials", {
+      email: values.email,
+      password: values.password,
+      redirect: false,
+    });
+
+    if (res?.error) {
+      setFormError("Invalid email or password");
+      return;
+    }
+
+    router.push("/account");
+    router.refresh();
   });
 
   const e = errors as Record<string, { message?: string } | undefined>;
@@ -61,47 +84,46 @@ export function AuthForm({ mode }: { mode: Mode }) {
         {isSignUp ? "Create account" : "Sign in"}
       </h1>
 
-      {submitted ? (
-        <div className="rounded-md border border-gray-200 bg-gray-200/40 p-4 text-sm text-ink-900">
-          Form valid ✓ — real authentication is wired up in Phase 2 with the
-          database.
+      {formError && (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {formError}
         </div>
-      ) : (
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          {isSignUp && (
-            <Field label="Name" error={e.name?.message}>
-              <Input type="text" autoComplete="name" {...register("name")} />
-            </Field>
-          )}
-          <Field label="Email" error={e.email?.message}>
-            <Input type="email" autoComplete="email" {...register("email")} />
+      )}
+
+      <form onSubmit={onSubmit} className="space-y-4" noValidate>
+        {isSignUp && (
+          <Field label="Name" error={e.name?.message}>
+            <Input type="text" autoComplete="name" {...register("name")} />
           </Field>
-          <Field label="Password" error={e.password?.message}>
+        )}
+        <Field label="Email" error={e.email?.message}>
+          <Input type="email" autoComplete="email" {...register("email")} />
+        </Field>
+        <Field label="Password" error={e.password?.message}>
+          <Input
+            type="password"
+            autoComplete={isSignUp ? "new-password" : "current-password"}
+            {...register("password")}
+          />
+        </Field>
+        {isSignUp && (
+          <Field label="Confirm password" error={e.confirmPassword?.message}>
             <Input
               type="password"
-              autoComplete={isSignUp ? "new-password" : "current-password"}
-              {...register("password")}
+              autoComplete="new-password"
+              {...register("confirmPassword")}
             />
           </Field>
-          {isSignUp && (
-            <Field label="Confirm password" error={e.confirmPassword?.message}>
-              <Input
-                type="password"
-                autoComplete="new-password"
-                {...register("confirmPassword")}
-              />
-            </Field>
-          )}
+        )}
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting
-              ? "Please wait…"
-              : isSignUp
-                ? "Create account"
-                : "Sign in"}
-          </Button>
-        </form>
-      )}
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting
+            ? "Please wait…"
+            : isSignUp
+              ? "Create account"
+              : "Sign in"}
+        </Button>
+      </form>
 
       <p className="mt-6 text-sm text-gray-500">
         {isSignUp ? "Already have an account? " : "No account yet? "}

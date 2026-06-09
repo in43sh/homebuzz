@@ -2,8 +2,10 @@ import Link from "next/link";
 import { categories } from "@/lib/categories";
 import { CartLink } from "@/components/cart/CartLink";
 import { MobileMenu } from "./MobileMenu";
+import { auth, signOut } from "@/auth";
 
-export function Header() {
+export async function Header() {
+  const session = await auth();
   return (
     <header className="bg-slate-700 text-white">
       {/* Top bar */}
@@ -34,9 +36,30 @@ export function Header() {
         </form>
 
         <nav className="ml-auto flex items-center gap-5 text-sm font-medium">
-          <Link href="/account" className="hidden hover:text-brand sm:inline">
-            Account
-          </Link>
+          {session?.user ? (
+            <>
+              <Link
+                href="/account"
+                className="hidden hover:text-brand sm:inline"
+              >
+                {session.user.name ?? "Account"}
+              </Link>
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/" });
+                }}
+              >
+                <button type="submit" className="hover:text-brand">
+                  Sign out
+                </button>
+              </form>
+            </>
+          ) : (
+            <Link href="/signin" className="hidden hover:text-brand sm:inline">
+              Sign in
+            </Link>
+          )}
           <CartLink />
         </nav>
       </div>

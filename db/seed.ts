@@ -1,7 +1,9 @@
+import bcrypt from "bcryptjs";
 import { db } from "./index";
 import {
   categories as categoriesTable,
   products as productsTable,
+  users as usersTable,
 } from "./schema";
 import { categories as categorySeed } from "../lib/categories";
 import { products as productSeed } from "../lib/mock-products";
@@ -12,6 +14,20 @@ async function main() {
   // Idempotent: clear in FK-safe order.
   await db.delete(productsTable);
   await db.delete(categoriesTable);
+  await db.delete(usersTable);
+
+  // Demo users (password for both: "password1234")
+  const passwordHash = await bcrypt.hash("password1234", 10);
+  await db.insert(usersTable).values([
+    { name: "Demo Customer", email: "demo@homebuzz.test", passwordHash },
+    {
+      name: "Admin",
+      email: "admin@homebuzz.test",
+      passwordHash,
+      role: "admin",
+    },
+  ]);
+  console.log("  2 users (demo@homebuzz.test / admin@homebuzz.test)");
 
   // Categories
   const insertedCategories = await db

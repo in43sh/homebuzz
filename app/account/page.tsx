@@ -1,36 +1,34 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth, signOut } from "@/auth";
 import { Button } from "@/components/ui/Button";
 
 export const metadata: Metadata = { title: "Your account" };
 
-// Placeholder profile. Real data arrives with Auth.js + the database (Phase 2),
-// where this becomes a server component reading the signed-in user and orders.
-const profile = {
-  name: "Guest user",
-  email: "guest@example.com",
-};
+export default async function AccountPage() {
+  const session = await auth();
+  if (!session?.user) redirect("/signin");
 
-const orders: {
-  id: string;
-  date: string;
-  total: string;
-  status: string;
-}[] = [];
+  const { name, email, role } = session.user;
+  // Orders land in Slice 3 (checkout). Empty for now.
+  const orders: { id: string; date: string; total: string; status: string }[] =
+    [];
 
-export default function AccountPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-heading font-black text-ink-900">Your account</h1>
-        <Button href="/signin" variant="outline" size="small">
-          Sign in
-        </Button>
-      </div>
-
-      <div className="mb-8 rounded-md border border-gray-200 bg-gray-200/40 p-4 text-sm text-ink-900">
-        You&apos;re browsing as a guest. Authentication is wired up in Phase 2 —
-        this page will then show your real profile and orders.
+        <form
+          action={async () => {
+            "use server";
+            await signOut({ redirectTo: "/" });
+          }}
+        >
+          <Button type="submit" variant="outline" size="small">
+            Sign out
+          </Button>
+        </form>
       </div>
 
       <div className="grid gap-8 md:grid-cols-[280px_1fr]">
@@ -40,21 +38,19 @@ export default function AccountPage() {
           <dl className="space-y-3 text-sm">
             <div>
               <dt className="text-gray-500">Name</dt>
-              <dd className="font-medium text-ink-900">{profile.name}</dd>
+              <dd className="font-medium text-ink-900">{name}</dd>
             </div>
             <div>
               <dt className="text-gray-500">Email</dt>
-              <dd className="font-medium text-ink-900">{profile.email}</dd>
+              <dd className="font-medium text-ink-900">{email}</dd>
             </div>
+            {role === "admin" && (
+              <div>
+                <dt className="text-gray-500">Role</dt>
+                <dd className="font-medium text-ink-900">Admin</dd>
+              </div>
+            )}
           </dl>
-          <Button
-            href="/signin"
-            variant="outline"
-            size="small"
-            className="mt-6 w-full"
-          >
-            Edit profile
-          </Button>
         </section>
 
         {/* Order history */}
@@ -74,15 +70,12 @@ export default function AccountPage() {
                   key={o.id}
                   className="flex items-center justify-between px-4 py-3 text-sm"
                 >
-                  <div>
-                    <Link
-                      href={`/account/orders/${o.id}`}
-                      className="font-bold text-ink-900 hover:text-slate-700"
-                    >
-                      Order #{o.id}
-                    </Link>
-                    <p className="text-gray-500">{o.date}</p>
-                  </div>
+                  <Link
+                    href={`/account/orders/${o.id}`}
+                    className="font-bold text-ink-900 hover:text-slate-700"
+                  >
+                    Order #{o.id}
+                  </Link>
                   <span className="text-gray-500">{o.status}</span>
                   <span className="font-black text-ink-900">{o.total}</span>
                 </li>
