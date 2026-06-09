@@ -12,7 +12,9 @@ export default defineConfig({
   out: "./db/migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    // Migrations need a direct (non-pooled) connection — DDL + prepared
+    // statements don't work through Neon's transaction-mode pooler.
+    url: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL!,
   },
   verbose: true,
   strict: true,
