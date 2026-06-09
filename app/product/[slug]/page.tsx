@@ -1,19 +1,16 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import {
-  getProduct,
-  getRelatedProducts,
-  products,
-} from "@/lib/mock-products";
+import { getProduct, getRelatedProducts, getProducts } from "@/lib/products";
 import { Stars } from "@/components/store/Stars";
 import { PricePer } from "@/components/store/PricePer";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { Badge } from "@/components/ui/Badge";
 import { ProductPurchase } from "@/components/cart/ProductPurchase";
 
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  const all = await getProducts();
+  return all.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({
@@ -22,7 +19,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) return { title: "Product not found" };
   return { title: product.title, description: product.description };
 }
@@ -33,10 +30,10 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) notFound();
 
-  const related = getRelatedProducts(slug);
+  const related = await getRelatedProducts(slug);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">

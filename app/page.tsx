@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getProducts } from "@/lib/mock-products";
+import { getProducts } from "@/lib/products";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { Button } from "@/components/ui/Button";
 import { ItemsStrip } from "@/components/blocks/ItemsStrip";
@@ -7,8 +7,8 @@ import { PromoBanners } from "@/components/blocks/PromoBanners";
 import { Tutorials } from "@/components/blocks/Tutorials";
 import { DeliveryBanner } from "@/components/blocks/DeliveryBanner";
 
-export default function Home() {
-  const popular = getProducts().slice(0, 8);
+export default async function Home() {
+  const popular = (await getProducts()).slice(0, 8);
   return (
     <>
       {/* Hero */}

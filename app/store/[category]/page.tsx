@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { categories } from "@/lib/categories";
-import { getProducts } from "@/lib/mock-products";
+import { getProducts } from "@/lib/products";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { CategorySidebar } from "@/components/store/CategorySidebar";
 
@@ -28,7 +28,7 @@ export default async function CategoryPage({
   const found = categories.find((c) => c.slug === category);
   if (!found) notFound();
 
-  const products = getProducts({ category });
+  const products = await getProducts({ category });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">

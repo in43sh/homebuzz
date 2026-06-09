@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getProducts } from "@/lib/mock-products";
+import { getProducts } from "@/lib/products";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { CategorySidebar } from "@/components/store/CategorySidebar";
 
@@ -14,7 +14,7 @@ export default async function StorePage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const products = getProducts({ q });
+  const products = await getProducts({ q });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
