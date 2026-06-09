@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
-import { useCart } from "./CartProvider";
+import { addToCartAction } from "@/app/actions/cart";
 
 export function AddToCartButton({
   product,
@@ -20,7 +20,7 @@ export function AddToCartButton({
   className?: string;
   fullWidth?: boolean;
 }) {
-  const { add } = useCart();
+  const [pending, startTransition] = useTransition();
   const [added, setAdded] = useState(false);
 
   return (
@@ -28,13 +28,16 @@ export function AddToCartButton({
       variant={variant}
       size={size}
       className={`${fullWidth ? "w-full" : ""} ${className ?? ""}`}
-      onClick={() => {
-        add(product, quantity);
-        setAdded(true);
-        window.setTimeout(() => setAdded(false), 1500);
-      }}
+      disabled={pending}
+      onClick={() =>
+        startTransition(async () => {
+          await addToCartAction(product.id, quantity);
+          setAdded(true);
+          window.setTimeout(() => setAdded(false), 1500);
+        })
+      }
     >
-      {added ? "Added ✓" : "Add to cart"}
+      {added ? "Added ✓" : pending ? "Adding…" : "Add to cart"}
     </Button>
   );
 }

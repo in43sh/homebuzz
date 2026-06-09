@@ -1,15 +1,17 @@
-"use client";
-
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { useCart } from "@/components/cart/CartProvider";
+import { getCart } from "@/lib/cart";
 import { Button } from "@/components/ui/Button";
+import { CartItemControls, CartFooter } from "@/components/cart/CartControls";
 import { formatPrice } from "@/lib/utils";
+
+export const metadata: Metadata = { title: "Shopping cart" };
 
 const TAX_RATE = 0.08;
 
-export default function CartPage() {
-  const { items, subtotal, count, setQty, remove, clear } = useCart();
+export default async function CartPage() {
+  const { items, subtotal, count } = await getCart();
 
   if (items.length === 0) {
     return (
@@ -36,7 +38,6 @@ export default function CartPage() {
       </div>
 
       <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
-        {/* Line items */}
         <ul className="divide-y divide-gray-200 border-y border-gray-200">
           {items.map((item) => (
             <li key={item.productId} className="flex gap-4 py-4">
@@ -63,44 +64,21 @@ export default function CartPage() {
                 <span className="text-sm text-gray-500">
                   {formatPrice(item.price)} / {item.unit}
                 </span>
-
-                <div className="mt-auto flex items-center gap-3">
-                  <div className="flex items-center rounded-md border border-gray-200">
-                    <button
-                      aria-label="Decrease quantity"
-                      className="h-8 w-8 text-lg font-bold text-ink-900 hover:bg-gray-200"
-                      onClick={() => setQty(item.productId, item.quantity - 1)}
-                    >
-                      −
-                    </button>
-                    <span className="w-8 text-center text-sm">
-                      {item.quantity}
-                    </span>
-                    <button
-                      aria-label="Increase quantity"
-                      className="h-8 w-8 text-lg font-bold text-ink-900 hover:bg-gray-200"
-                      onClick={() => setQty(item.productId, item.quantity + 1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <button
-                    className="text-sm text-gray-500 underline hover:text-ink-900"
-                    onClick={() => remove(item.productId)}
-                  >
-                    Remove
-                  </button>
+                <div className="mt-auto">
+                  <CartItemControls
+                    productId={item.productId}
+                    quantity={item.quantity}
+                  />
                 </div>
               </div>
 
               <div className="text-right font-black text-ink-900">
-                {formatPrice(item.price * item.quantity)}
+                {formatPrice(item.lineTotal)}
               </div>
             </li>
           ))}
         </ul>
 
-        {/* Summary */}
         <aside className="h-fit rounded-lg border border-gray-200 p-6">
           <h2 className="mb-4 text-lg font-black text-ink-900">Order summary</h2>
           <dl className="space-y-2 text-sm">
@@ -117,21 +95,7 @@ export default function CartPage() {
               <dd className="font-black text-ink-900">{formatPrice(total)}</dd>
             </div>
           </dl>
-
-          <Button
-            variant="warning"
-            className="mt-6 w-full"
-            // Checkout lands in Slice 3 (Stripe). Stub for now.
-            onClick={() => alert("Checkout arrives in Slice 3 (Stripe).")}
-          >
-            Checkout
-          </Button>
-          <button
-            className="mt-3 w-full text-center text-sm text-gray-500 underline hover:text-ink-900"
-            onClick={clear}
-          >
-            Clear cart
-          </button>
+          <CartFooter />
         </aside>
       </div>
     </div>

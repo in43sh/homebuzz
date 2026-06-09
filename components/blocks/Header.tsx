@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { categories } from "@/lib/categories";
-import { CartLink } from "@/components/cart/CartLink";
 import { MobileMenu } from "./MobileMenu";
 import { auth, signOut } from "@/auth";
+import { getCart } from "@/lib/cart";
 
 export async function Header() {
   const session = await auth();
+  const { count } = await getCart();
   return (
     <header className="bg-slate-700 text-white">
       {/* Top bar */}
@@ -60,7 +61,14 @@ export async function Header() {
               Sign in
             </Link>
           )}
-          <CartLink />
+          <Link href="/cart" className="relative hover:text-brand">
+            Cart
+            {count > 0 && (
+              <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-xs font-bold text-ink-900">
+                {count}
+              </span>
+            )}
+          </Link>
         </nav>
       </div>
 

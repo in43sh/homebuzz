@@ -13,6 +13,7 @@ import {
   type SignUpValues,
 } from "@/lib/validation";
 import { registerUser } from "@/app/actions/auth";
+import { mergeGuestCartAction } from "@/app/actions/cart";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -71,6 +72,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
       setFormError("Invalid email or password");
       return;
     }
+
+    // Fold any guest cart into the now-authenticated user's cart.
+    await mergeGuestCartAction();
 
     router.push("/account");
     router.refresh();

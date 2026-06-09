@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
-import { useCart } from "./CartProvider";
+import { addToCartAction } from "@/app/actions/cart";
 
 export function ProductPurchase({ product }: { product: Product }) {
-  const { add } = useCart();
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   return (
     <div className="flex flex-col gap-4">
@@ -35,20 +35,26 @@ export function ProductPurchase({ product }: { product: Product }) {
       <div className="flex gap-3">
         <Button
           variant="default"
-          onClick={() => {
-            add(product, qty);
-            setAdded(true);
-            window.setTimeout(() => setAdded(false), 1500);
-          }}
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => {
+              await addToCartAction(product.id, qty);
+              setAdded(true);
+              window.setTimeout(() => setAdded(false), 1500);
+            })
+          }
         >
-          {added ? "Added ✓" : "Add to cart"}
+          {added ? "Added ✓" : pending ? "Adding…" : "Add to cart"}
         </Button>
         <Button
           variant="outline"
-          onClick={() => {
-            add(product, qty);
-            router.push("/cart");
-          }}
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => {
+              await addToCartAction(product.id, qty);
+              router.push("/cart");
+            })
+          }
         >
           Buy now
         </Button>
