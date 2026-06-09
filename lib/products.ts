@@ -3,6 +3,16 @@ import { db } from "@/db";
 import { products, categories } from "@/db/schema";
 import type { Product } from "./types";
 
+export type CategoryNav = { name: string; slug: string };
+
+/** Category list for nav/routing, sourced from the DB (insertion order). */
+export async function getCategories(): Promise<CategoryNav[]> {
+  return db
+    .select({ name: categories.name, slug: categories.slug })
+    .from(categories)
+    .orderBy(categories.id);
+}
+
 const selection = {
   id: products.id,
   slug: products.slug,

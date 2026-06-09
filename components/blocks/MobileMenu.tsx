@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { categories } from "@/lib/categories";
+import type { CategoryNav } from "@/lib/products";
 
-export function MobileMenu() {
+export function MobileMenu({ categories }: { categories: CategoryNav[] }) {
   const [open, setOpen] = useState(false);
 
   // lock scroll + close on Escape while open

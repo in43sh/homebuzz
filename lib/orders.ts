@@ -106,27 +106,29 @@ export async function getOrders(): Promise<OrderSummary[]> {
   if (!session?.user?.id) return [];
   const userId = Number(session.user.id);
 
+  // Single aggregate query: sum item quantities per order via a LEFT JOIN +
+  // GROUP BY rather than one count query per order.
   const rows = await db
-    .select()
+    .select({
+      id: orders.id,
+      status: orders.status,
+      total: orders.total,
+      createdAt: orders.createdAt,
+      itemCount: sql<number>`coalesce(sum(${orderItems.quantity}), 0)::int`,
+    })
     .from(orders)
+    .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
     .where(eq(orders.userId, userId))
+    .groupBy(orders.id)
     .orderBy(desc(orders.createdAt));
 
-  const summaries: OrderSummary[] = [];
-  for (const o of rows) {
-    const items = await db
-      .select({ quantity: orderItems.quantity })
-      .from(orderItems)
-      .where(eq(orderItems.orderId, o.id));
-    summaries.push({
-      id: o.id,
-      status: o.status,
-      total: Number(o.total),
-      createdAt: o.createdAt,
-      itemCount: items.reduce((n, i) => n + i.quantity, 0),
-    });
-  }
-  return summaries;
+  return rows.map((o) => ({
+    id: o.id,
+    status: o.status,
+    total: Number(o.total),
+    createdAt: o.createdAt,
+    itemCount: o.itemCount,
+  }));
 }
 
 export async function getOrder(id: number): Promise<OrderDetail | null> {

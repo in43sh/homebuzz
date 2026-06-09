@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { categories } from "@/lib/categories";
+import { getCategories } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
-export function CategorySidebar({ activeSlug }: { activeSlug?: string }) {
+export async function CategorySidebar({ activeSlug }: { activeSlug?: string }) {
+  const categories = await getCategories();
   return (
     <aside className="w-full shrink-0 md:w-56">
       <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500">

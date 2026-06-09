@@ -15,7 +15,7 @@ A self-contained reference for the Homebuzz codebase: architecture, data model, 
 **Roles:**
 
 | Role | Capabilities |
-|------|--------------|
+| ------ | -------------- |
 | Guest (anonymous) | Browse catalog, search, build a cookie-backed cart |
 | `customer` | Everything a guest can do + checkout, order history, write reviews |
 | `admin` | Everything a customer can do + product CRUD under `/admin` |
@@ -90,9 +90,12 @@ sequenceDiagram
 
   U->>A: placeOrderAction()
   A->>C: placeOrder() (lib/orders.ts)
+  Note over C,DB: one transaction
+  C->>DB: UPDATE products SET stock = stock - qty WHERE stock >= qty (per line)
   C->>DB: INSERT orders(status='paid', total=subtotal*1.08)
-  C->>DB: INSERT order_items (price snapshots), then clearCart()
-  A->>U: redirect /account/orders/{id}
+  C->>DB: INSERT order_items (price snapshots)
+  C->>DB: clearCart() (after commit)
+  A->>U: redirect /account/orders/{id} (or /cart?error=stock if short)
 ```
 
 Numbered walkthrough:
@@ -103,13 +106,13 @@ Numbered walkthrough:
 4. The action calls `revalidatePath("/", "layout")` so the header cart count re-renders.
 5. **Sign in.** [components/auth/AuthForm.tsx](components/auth/AuthForm.tsx) calls Auth.js `signIn("credentials", …)`, then explicitly calls `mergeGuestCartAction()`.
 6. `mergeGuestCartIntoUser` folds the guest cart into the user's cart (summing shared products), deletes the guest cart, and clears the cookie.
-7. **Checkout.** [app/cart/page.tsx](app/cart/page.tsx)'s checkout button → `placeOrderAction` → `placeOrder` ([lib/orders.ts](lib/orders.ts)) inserts an `orders` row with `status='paid'` and `total = subtotal × 1.08`, inserts `order_items` (price snapshots), clears the cart, then redirects to the order detail page.
+7. **Checkout.** [app/cart/page.tsx](app/cart/page.tsx)'s checkout button → `placeOrderAction` → `placeOrder` ([lib/orders.ts](lib/orders.ts)). In one transaction it decrements each line's `stock` (rejecting oversell), inserts an `orders` row with `status='paid'` and `total = subtotal × 1.08`, and inserts `order_items` (price snapshots); on commit it clears the cart and redirects to the order detail page (or back to `/cart?error=stock` if a line was short). See §6.4.
 
 ---
 
 ## 3. Repository Structure
 
-```
+```text
 homebuzz/
 ├── app/                          # Next.js App Router (pages, actions, routes)
 │   ├── layout.tsx                # Root layout: Header + Footer, Inter font, metadata template
@@ -150,8 +153,8 @@ homebuzz/
 │   ├── orders.ts                 # placeOrder, getOrders, getOrder; TAX_RATE
 │   ├── reviews.ts                # getReviews, upsertReview, rating recompute
 │   ├── admin.ts                  # isAdmin guard + product CRUD + slug uniqueness
-│   ├── products.ts               # Catalog queries (NOT server-only; mapRow)
-│   ├── categories.ts             # 15 hardcoded category names + slugify()
+│   ├── products.ts               # Catalog queries + getCategories (NOT server-only)
+│   ├── categories.ts             # Seed category list + slugify() (seed/admin only)
 │   ├── mock-products.ts          # Seed product data
 │   ├── validation.ts             # Zod schemas (signin/signup/review/product)
 │   ├── types.ts                  # Frontend Product type
@@ -171,7 +174,7 @@ homebuzz/
 ## 4. Tech Stack
 
 | Layer | Technology | Why (specific to this project) |
-|-------|-----------|-------------------------------|
+| ------- | ----------- | ------------------------------- |
 | Framework | Next.js 16.2.7 (App Router) | Single deployable for UI + server logic; Server Components read the DB directly, Server Actions handle mutations without a hand-written API layer. |
 | UI runtime | React 19.2 | Required by Next 16; enables async Server Components and `useFormStatus`-style action UX. |
 | Language | TypeScript 5 | Type-safe Drizzle row inference and Zod-inferred form types. |
@@ -209,8 +212,9 @@ erDiagram
 ```
 
 ### 5.1 `categories`
+
 | Column | Type | Purpose |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | `id` | serial PK | |
 | `name` | text not null | Display name (e.g. "Paint & Building Materials") |
 | `slug` | text not null, **unique** | Routing key for `/store/:slug` |
@@ -218,8 +222,9 @@ erDiagram
 | `parent_id` | integer nullable | Self-reference for subcategories (no FK constraint; currently unused) |
 
 ### 5.2 `products`
+
 | Column | Type | Purpose |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | `id` | serial PK | |
 | `slug` | text not null, **unique** | PDP route key `/product/:slug` |
 | `title` | text not null | |
@@ -239,15 +244,17 @@ erDiagram
 Indexes: `products_slug_idx` (unique), `products_category_idx`.
 
 ### 5.3 `product_images`
+
 | Column | Type | Purpose |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | `id` | serial PK | |
 | `product_id` | integer not null → `products.id` `ON DELETE cascade` | |
 | `url` / `alt` / `position` | text / text / integer | Gallery image (table exists; gallery UI not yet built) |
 
 ### 5.4 `users`
+
 | Column | Type | Purpose |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | `id` | serial PK | |
 | `email` | text not null, **unique** | Login identifier |
 | `password_hash` | text not null | bcrypt hash (cost 10) |
@@ -256,18 +263,21 @@ Indexes: `products_slug_idx` (unique), `products_category_idx`.
 | `created_at` / `updated_at` | timestamp | |
 
 ### 5.5 `carts` & `cart_items`
+
 `carts`: `id`, `user_id` (nullable → `users.id` cascade), `token` (nullable; guest cookie token), timestamps. Index `carts_user_idx`. A cart is keyed by **either** `user_id` (signed-in) **or** `token` (guest), never both at once in practice.
 
 `cart_items`: `id`, `cart_id` (→ `carts.id` cascade), `product_id` (→ `products.id` cascade), `quantity` (default 1), `unit_price` numeric(10,2) — **a price snapshot taken at add-time**.
 
 ### 5.6 `orders` & `order_items`
+
 `orders`: `id`, `user_id` (not null → `users.id` `restrict`), `status` (`order_status` default `pending`), `total` numeric(10,2), `created_at`.
 
 `order_items`: `id`, `order_id` (→ `orders.id` cascade), `product_id` (→ `products.id` `restrict`), `quantity`, `unit_price` (snapshot).
 
 ### 5.7 `reviews`
+
 | Column | Type | Purpose |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | `id` | serial PK | |
 | `product_id` | integer not null → `products.id` cascade | Index `reviews_product_idx` |
 | `user_id` | integer not null → `users.id` cascade | One review per (product,user) enforced in code, not by a DB constraint |
@@ -279,7 +289,7 @@ Indexes: `products_slug_idx` (unique), `products_category_idx`.
 
 The enum defines five states, but the code only ever **inserts `paid`**:
 
-```
+```text
 pending ──(unused)──┐
                     ▼
    placeOrder() ─► paid ──► shipped ──► delivered   (shipped/delivered/cancelled
@@ -294,6 +304,7 @@ pending ──(unused)──┐
 ## 6. Core Subsystems
 
 ### 6.1 Authentication & Authorization
+
 - **Config:** [auth.ts](auth.ts) — NextAuth v5 with a single **Credentials** provider, `session.strategy = "jwt"`, `trustHost: true`, custom sign-in page `/signin`.
 - **Login:** `authorize` validates input with `signInSchema`, looks up the user by email, and `bcrypt.compare`s the password. On success it returns `{ id, email, name, role }`.
 - **Session shape:** JWT/session callbacks copy `id` and `role` onto the token and session. The `Session`/`JWT` types are augmented in [types/next-auth.d.ts](types/next-auth.d.ts).
@@ -301,28 +312,34 @@ pending ──(unused)──┐
 - **Route guarding:** there is **no `middleware.ts`**. Guards are per-surface, server-side:
   - Admin: [app/admin/layout.tsx](app/admin/layout.tsx) and every admin action call `isAdmin()` ([lib/admin.ts](lib/admin.ts)) and `redirect("/")` if false.
   - Account/order pages call `auth()` and `redirect("/signin")` if no session.
-- **HTTP handler:** [app/api/auth/[...nextauth]/route.ts](app/api/auth/[...nextauth]/route.ts) just re-exports `handlers` from `auth.ts`.
+- **HTTP handler:** [app/api/auth/\[...nextauth\]/route.ts](app/api/auth/%5B...nextauth%5D/route.ts) just re-exports `handlers` from `auth.ts`.
 
 ### 6.2 Cart (guest + user, with merge)
+
 Lives in [lib/cart.ts](lib/cart.ts); mutations exposed via [app/actions/cart.ts](app/actions/cart.ts). Key behaviors:
+
 - `resolveCartId(create)` is the heart of it: signed-in → cart keyed by `user_id`; guest → cart keyed by the `cart_token` httpOnly cookie (`sameSite: lax`, 30-day max-age). The `create` flag **must only be true inside a Server Action / Route Handler**, since it may set a cookie (forbidden during render).
 - `addItem` snapshots `unit_price` from the product and upserts the line (sums quantity if it exists).
 - `mergeGuestCartIntoUser` folds the guest cart into the user cart on login, summing shared products, then deletes the guest cart and cookie. It is invoked **explicitly from the client** after `signIn` in [components/auth/AuthForm.tsx](components/auth/AuthForm.tsx) — it is not an Auth.js callback (see §15).
 - Every cart action calls `revalidatePath("/", "layout")` because the header cart count lives in the root layout.
 
 ### 6.3 Reviews
-[lib/reviews.ts](lib/reviews.ts) + [app/actions/reviews.ts](app/actions/reviews.ts). `upsertReview` enforces one review per (product, user) **in code** (lookup-then-insert-or-update), then `recomputeProductRating` recalculates `products.rating_avg` / `rating_count` from the `reviews` table and writes the denormalized values back. The PDP revalidates after submit.
+
+[lib/reviews.ts](lib/reviews.ts) + [app/actions/reviews.ts](app/actions/reviews.ts). `upsertReview` is **purchase-gated**: it returns `{ ok: false, reason: "unauthenticated" | "not_purchased" }` unless the user has an `order_items` row (joined to their `orders`) for that product, via the `hasPurchased` helper. It then enforces one review per (product, user) **in code** (lookup-then-insert-or-update) and calls `recomputeProductRating` to recompute `products.rating_avg` / `rating_count` from the `reviews` table. The PDP revalidates after submit, and uses the exported `canReview(productId)` to decide whether to render `ReviewForm` or a "only customers who ordered this can review" notice.
 
 ### 6.4 Orders / Checkout
+
 [lib/orders.ts](lib/orders.ts) + [app/actions/orders.ts](app/actions/orders.ts). `placeOrder` requires a session and a non-empty cart, computes `total = subtotal × (1 + TAX_RATE)` where `TAX_RATE = 0.08`, then runs a **single transaction** that: (1) decrements each product's `stock` atomically via `UPDATE … SET stock = stock - qty WHERE id = ? AND stock >= qty` — a row only updates while enough remains, so concurrent checkouts can't oversell; (2) inserts the order **directly as `status='paid'`**; (3) snapshots line prices into `order_items`. If any line is short, an `OutOfStockError` rolls the whole transaction back and `placeOrder` returns `{ ok: false, reason: "out_of_stock", items }` — the cart is left intact and `placeOrderAction` redirects to `/cart?error=stock` (which renders an inline banner). On success the cart is cleared. `getOrder(id)` is **ownership-checked** (`WHERE id = … AND user_id = …`) so users can't read others' orders.
 
 > **No real payment processing exists.** `placeOrder` marks orders paid unconditionally. Real payments (e.g. Stripe) + the accompanying webhooks/emails are planned future work (§17).
 
 ### 6.5 Admin product management
+
 [lib/admin.ts](lib/admin.ts) (server-only) + [app/actions/admin.ts](app/actions/admin.ts). `isAdmin()` gates every operation. `createProduct`/`updateProduct` derive a unique slug via `uniqueSlug` (slugify the title; on collision append the last 5 digits of `Date.now()`). `saveProductAction` validates with `productSchema`, then `revalidateCatalog()` busts `/admin/products`, `/store`, and `/`. There is no admin order or user management — products only.
 
 ### 6.6 Catalog queries
-[lib/products.ts](lib/products.ts) — the one `lib` module that is **not** `server-only` (so it can be reached from `generateStaticParams`). `getProducts({ category, q })` joins products↔categories, supports an `ilike` search over title+description, and orders `on_sale DESC, id`. `getRelatedProducts` picks random same-category products via `ORDER BY random()`.
+
+[lib/products.ts](lib/products.ts) — the one `lib` module that is **not** `server-only` (so it can be reached from `generateStaticParams`). `getProducts({ category, q })` joins products↔categories, supports an `ilike` search over title+description, and orders `on_sale DESC, id`. `getRelatedProducts` picks random same-category products via `ORDER BY random()`. `getCategories()` returns the nav category list (`{ name, slug }`, insertion order) straight from the `categories` table — the `Header`, `MobileMenu`, `CategorySidebar`, and `/store/[category]` all source categories from it (DB-driven, not the static `lib/categories.ts` list, which now serves only the seed + `slugify`).
 
 ---
 
@@ -331,13 +348,13 @@ Lives in [lib/cart.ts](lib/cart.ts); mutations exposed via [app/actions/cart.ts]
 There is **no REST/GraphQL API**. All server interaction is via Server Actions (not addressable URLs) plus one Auth.js route. The only HTTP endpoints:
 
 | Method | Path | Access | Purpose |
-|--------|------|--------|---------|
+| -------- | ------ | -------- | --------- |
 | GET/POST | `/api/auth/[...nextauth]` | Public | Auth.js sign-in / sign-out / session / CSRF |
 
 Server Actions (invoked via React, not fetched directly):
 
 | Action | File | Access | Purpose |
-|--------|------|--------|---------|
+| -------- | ------ | -------- | --------- |
 | `registerUser` | actions/auth.ts | Public | Create account |
 | `addToCartAction` / `setQtyAction` / `removeItemAction` / `clearCartAction` | actions/cart.ts | Public (guest ok) | Cart mutations |
 | `mergeGuestCartAction` | actions/cart.ts | Auth (no-op if guest) | Fold guest cart on login |
@@ -352,14 +369,14 @@ Server Actions (invoked via React, not fetched directly):
 Server Components fetch data; small Client Components own interactivity. **Server state** comes from `lib/*` reads + `revalidatePath` after actions; there is **no client data-fetching/state library** (no React Query, no Redux). Local UI state uses `useState` + react-hook-form.
 
 | Route | File | Notable behavior |
-|-------|------|------------------|
+| ------- | ------ | ------------------ |
 | `/` | [app/page.tsx](app/page.tsx) | Hero + first 8 products + marketing blocks |
 | `/store` | [app/store/page.tsx](app/store/page.tsx) | Catalog; `?q=` search; sidebar of categories |
-| `/store/[category]` | [app/store/[category]/page.tsx](app/store/[category]/page.tsx) | Category filter; `generateStaticParams` over the 15 categories; `notFound()` on bad slug |
-| `/product/[slug]` | [app/product/[slug]/page.tsx](app/product/[slug]/page.tsx) | PDP: details, related, reviews; `generateStaticParams` over all product slugs |
+| `/store/[category]` | [app/store/\[category\]/page.tsx](app/store/%5Bcategory%5D/page.tsx) | Category filter; `generateStaticParams` over the 15 categories; `notFound()` on bad slug |
+| `/product/[slug]` | [app/product/\[slug\]/page.tsx](app/product/%5Bslug%5D/page.tsx) | PDP: details, related, reviews; `generateStaticParams` over all product slugs |
 | `/cart` | [app/cart/page.tsx](app/cart/page.tsx) | Line items, qty controls, summary (`TAX_RATE` from `lib/orders`), checkout; shows a stock banner on `?error=stock` |
 | `/account` | [app/account/page.tsx](app/account/page.tsx) | Auth-gated; profile + order history; sign-out via inline server action |
-| `/account/orders/[id]` | [app/account/orders/[id]/page.tsx](app/account/orders/[id]/page.tsx) | Ownership-checked order detail; back-computes subtotal/tax from `total` |
+| `/account/orders/[id]` | [app/account/orders/\[id\]/page.tsx](app/account/orders/%5Bid%5D/page.tsx) | Ownership-checked order detail; back-computes subtotal/tax from `total` |
 | `/admin/products` (+ `/new`, `/[id]/edit`) | [app/admin/products/](app/admin/products/) | Admin-gated CRUD; wraps `ProductForm` |
 | `/signin`, `/signup` | [app/signin/page.tsx](app/signin/page.tsx), [app/signup/page.tsx](app/signup/page.tsx) | Render shared `AuthForm` |
 | `/help`, `/privacy` | [app/help/page.tsx](app/help/page.tsx), [app/privacy/page.tsx](app/privacy/page.tsx) | Static content |
@@ -371,13 +388,14 @@ Navigation: persistent `Header`/`Footer` in the root layout; `MobileMenu` for sm
 ## 9. Testing
 
 | Level | Tool | Location | Count | Covers |
-|-------|------|----------|-------|--------|
+| ------- | ------ | ---------- | ------- | -------- |
 | Unit | Vitest (node env) | [tests/unit/](tests/unit/) | 18 tests / 3 files | `slugify` + categories, `cn`/`formatPrice` utils, all Zod schemas |
 | E2E | Playwright (Chromium) | [tests/e2e/shop.spec.ts](tests/e2e/shop.spec.ts) | 3 tests | Browse catalog, search `?q=drill`, add-to-cart → cart total |
 
 Playwright auto-starts `npm run dev` (`reuseExistingServer: true`) and hits `http://localhost:3000`. Runs are serial (`fullyParallel: false`), no retries.
 
 **What is NOT tested:**
+
 - Auth flows (signin/signup/session/role gating) — no coverage.
 - Checkout / `placeOrder`, order history, ownership checks.
 - Reviews and rating recompute.
@@ -401,14 +419,16 @@ npm run dev                     # http://localhost:3000
 ```
 
 Seeded logins (password `password1234` for both):
+
 - `demo@homebuzz.test` — customer
 - `admin@homebuzz.test` — admin
 
 Other commands: `npm run db:generate` (migration from schema), `npm run db:studio` (Drizzle Studio), `npm run build` / `npm start`, `npm run lint`, `npm test`, `npm run test:e2e`.
 
 **Common issues:**
+
 | Symptom | Fix |
-|---------|-----|
+| --------- | ----- |
 | `relation "products" does not exist` | Tables not created — run `db:migrate` then `db:seed`. |
 | `DATABASE_URL is not set` | Env file is `.env`, not `.env.local`. Rename it. |
 | Interactive prompt error on `db:push` | Use `npm run db:migrate` instead — `db:push` needs a real TTY; don't use it in scripts/CI. |
@@ -418,7 +438,7 @@ Other commands: `npm run db:generate` (migration from schema), `npm run db:studi
 ## 11. Environment Variables
 
 | Name | Required | Secret | Purpose |
-|------|----------|--------|---------|
+| ------ | ---------- | -------- | --------- |
 | `DATABASE_URL` | Yes | Yes | **Pooled** Neon connection (host contains `-pooler`). Used by the app at runtime. Read in [db/index.ts](db/index.ts). |
 | `DATABASE_URL_UNPOOLED` | Yes (for migrations) | Yes | **Direct** Neon connection (no `-pooler`). Used by `drizzle-kit` ([drizzle.config.ts](drizzle.config.ts)). |
 | `AUTH_SECRET` | Yes | Yes | NextAuth JWT signing secret. Generate with `npx auth secret`. |
@@ -449,6 +469,8 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 - **Input validation:** every mutation re-validates with Zod **on the server** (`signInSchema`, `signUpSchema`, `reviewSchema`, `productSchema`) regardless of client validation.
 - **Cookies:** the guest `cart_token` is `httpOnly`, `sameSite: lax`, path `/`, 30-day max-age.
 - **SQL injection:** all queries go through Drizzle's parameterized builder (including `ilike` search terms).
+- **Reviews are purchase-gated:** `upsertReview` rejects users without a matching `order_items` row (§6.3), and the PDP hides the form from non-purchasers via `canReview`.
+- **Image paths are constrained** to local `/public` paths by `productSchema` so admin input can't point `next/image` at an unconfigured remote host (§15).
 - **Signup race:** `registerUser` does a read-then-insert duplicate-email check, and additionally catches the unique-violation (SQLSTATE `23505`) from `users_email_idx` so two concurrent signups can't both succeed.
 
 ---
@@ -475,13 +497,15 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 - **`db:push` needs a TTY** — it prompts interactively. Use `db:migrate` in any non-interactive context.
 - **Order states are mostly fiction.** Only `paid` is ever written; `pending`/`shipped`/`delivered`/`cancelled` have no transitions (§5.8).
 - **`product_images` and `categories.parent_id` exist but are unused** by the current UI — tables/columns reserved for future galleries and subcategories.
+- **Product images must be local `/public` paths.** [next.config.ts](next.config.ts) declares no `images.remotePatterns`, so a remote URL would crash `next/image`. `productSchema` ([lib/validation.ts](lib/validation.ts)) now rejects any `image` that isn't empty or doesn't start with `/`, so the admin form can't introduce one — but a path written straight to the DB (seed/SQL) still must point under `/public/products/…`.
+- **Category nav comes from the DB but there's no category CRUD.** `Header`/`MobileMenu`/`CategorySidebar`/`/store/[category]` all read `getCategories()` (the `categories` table) — but rows are only ever created by the seed; there is no admin UI to add/rename/delete a category. `lib/categories.ts` is now seed-and-`slugify`-only; don't wire it back into nav.
 
 ---
 
 ## 16. Glossary
 
 | Term | Definition |
-|------|------------|
+| ------ | ------------ |
 | **Guest cart** | A `carts` row with a null `user_id` and a `token`, identified by the `cart_token` httpOnly cookie. Merged into the user cart on login. |
 | **Cart merge** | `mergeGuestCartIntoUser` — folds a guest cart's items into the signed-in user's cart, summing shared products, then deletes the guest cart + cookie. |
 | **Price snapshot** | The `unit_price` copied onto a `cart_items`/`order_items` row at action time; not re-synced if the product price later changes. |
@@ -499,6 +523,6 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 2. **Add-to-cart stock awareness.** Stock is now enforced at checkout (§6.4); a nicer flow would also surface remaining stock on the PDP and cap add-to-cart quantities up front.
 3. **Order lifecycle + admin order management.** Wire `shipped`/`delivered`/`cancelled` transitions and an admin UI to drive them.
 4. **Background work to accompany payments.** Payment webhooks and transactional email (order confirmations) — none exist today.
-5. **Product image galleries.** Use the existing `product_images` table on the PDP.
-6. **Subcategories.** Activate `categories.parent_id` (add an FK + nav).
+5. **Product image uploads + galleries.** Add real uploads (or configure `images.remotePatterns`) so images aren't limited to hand-placed `/public` files, then use the existing `product_images` table for PDP galleries.
+6. **Category management + subcategories.** Nav is DB-driven (`getCategories`), but there's no admin CRUD for categories and `categories.parent_id` is still unused — add a management UI and wire subcategories.
 7. **Test coverage for the untested paths** in §9 (auth, checkout, reviews, admin, cart merge).

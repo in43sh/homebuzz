@@ -1,8 +1,29 @@
 import "server-only";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { reviews, users, products } from "@/db/schema";
+import { reviews, users, products, orders, orderItems } from "@/db/schema";
 import { auth } from "@/auth";
+
+/** True if the user has an order containing this product. */
+async function hasPurchased(
+  userId: number,
+  productId: number,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: orderItems.id })
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
+    .where(and(eq(orders.userId, userId), eq(orderItems.productId, productId)))
+    .limit(1);
+  return Boolean(row);
+}
+
+/** Whether the current session user is allowed to review this product. */
+export async function canReview(productId: number): Promise<boolean> {
+  const session = await auth();
+  if (!session?.user?.id) return false;
+  return hasPurchased(Number(session.user.id), productId);
+}
 
 export type ReviewView = {
   id: number;
@@ -47,15 +68,19 @@ async function recomputeProductRating(productId: number): Promise<void> {
 }
 
 /** Add or update the signed-in user's review (one per product), then refresh the
- * product's aggregate rating. */
+ * product's aggregate rating. Only verified purchasers may review. */
 export async function upsertReview(
   productId: number,
   rating: number,
   body: string,
-): Promise<{ ok: boolean }> {
+): Promise<{ ok: true } | { ok: false; reason: "unauthenticated" | "not_purchased" }> {
   const session = await auth();
-  if (!session?.user?.id) return { ok: false };
+  if (!session?.user?.id) return { ok: false, reason: "unauthenticated" };
   const userId = Number(session.user.id);
+
+  if (!(await hasPurchased(userId, productId))) {
+    return { ok: false, reason: "not_purchased" };
+  }
 
   const [existing] = await db
     .select({ id: reviews.id })

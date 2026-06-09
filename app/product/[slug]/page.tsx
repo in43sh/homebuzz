@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProduct, getRelatedProducts, getProducts } from "@/lib/products";
-import { getReviews } from "@/lib/reviews";
+import { getReviews, canReview } from "@/lib/reviews";
 import { auth } from "@/auth";
 import { Stars } from "@/components/store/Stars";
 import { PricePer } from "@/components/store/PricePer";
@@ -37,10 +37,11 @@ export default async function ProductPage({
   const product = await getProduct(slug);
   if (!product) notFound();
 
-  const [related, reviews, session] = await Promise.all([
+  const [related, reviews, session, reviewable] = await Promise.all([
     getRelatedProducts(slug),
     getReviews(Number(product.id)),
     auth(),
+    canReview(Number(product.id)),
   ]);
 
   return (
@@ -106,14 +107,18 @@ export default async function ProductPage({
             )}
           </ul>
 
-          {session?.user ? (
-            <ReviewForm productId={Number(product.id)} slug={product.slug} />
-          ) : (
+          {!session?.user ? (
             <div className="h-fit rounded-lg border border-dashed border-gray-200 p-4 text-sm text-gray-500">
               <Link href="/signin" className="font-bold text-ink-900 underline">
                 Sign in
               </Link>{" "}
               to write a review.
+            </div>
+          ) : reviewable ? (
+            <ReviewForm productId={Number(product.id)} slug={product.slug} />
+          ) : (
+            <div className="h-fit rounded-lg border border-dashed border-gray-200 p-4 text-sm text-gray-500">
+              Only customers who have ordered this product can review it.
             </div>
           )}
         </div>

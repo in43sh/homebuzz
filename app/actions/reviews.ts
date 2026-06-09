@@ -22,7 +22,13 @@ export async function submitReviewAction(
     parsed.data.body ?? "",
   );
   if (!result.ok) {
-    return { ok: false, error: "You must be signed in to review" };
+    return {
+      ok: false,
+      error:
+        result.reason === "not_purchased"
+          ? "You can only review products you've ordered"
+          : "You must be signed in to review",
+    };
   }
 
   revalidatePath(`/product/${slug}`);

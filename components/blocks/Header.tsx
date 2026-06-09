@@ -1,17 +1,20 @@
 import Link from "next/link";
-import { categories } from "@/lib/categories";
+import { getCategories } from "@/lib/products";
 import { MobileMenu } from "./MobileMenu";
 import { auth, signOut } from "@/auth";
 import { getCart } from "@/lib/cart";
 
 export async function Header() {
   const session = await auth();
-  const { count } = await getCart();
+  const [{ count }, categories] = await Promise.all([
+    getCart(),
+    getCategories(),
+  ]);
   return (
     <header className="bg-slate-700 text-white">
       {/* Top bar */}
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 md:gap-6">
-        <MobileMenu />
+        <MobileMenu categories={categories} />
         <Link href="/" className="text-2xl font-black tracking-tight">
           home<span className="text-brand">buzz</span>
         </Link>

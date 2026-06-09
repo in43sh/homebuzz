@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { categories } from "@/lib/categories";
-import { getProducts } from "@/lib/products";
+import { getProducts, getCategories } from "@/lib/products";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { CategorySidebar } from "@/components/store/CategorySidebar";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const categories = await getCategories();
   return categories.map((c) => ({ category: c.slug }));
 }
 
@@ -15,7 +15,7 @@ export async function generateMetadata({
   params: Promise<{ category: string }>;
 }): Promise<Metadata> {
   const { category } = await params;
-  const found = categories.find((c) => c.slug === category);
+  const found = (await getCategories()).find((c) => c.slug === category);
   return { title: found?.name ?? "Store" };
 }
 
@@ -25,7 +25,7 @@ export default async function CategoryPage({
   params: Promise<{ category: string }>;
 }) {
   const { category } = await params;
-  const found = categories.find((c) => c.slug === category);
+  const found = (await getCategories()).find((c) => c.slug === category);
   if (!found) notFound();
 
   const products = await getProducts({ category });
