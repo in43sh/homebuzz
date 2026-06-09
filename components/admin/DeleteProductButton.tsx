@@ -18,7 +18,8 @@ export function DeleteProductButton({
       onClick={() => {
         if (!confirm(`Delete “${title}”? This cannot be undone.`)) return;
         startTransition(async () => {
-          await deleteProductAction(id);
+          const res = await deleteProductAction(id);
+          if (res && !res.ok) alert(res.error);
         });
       }}
     >

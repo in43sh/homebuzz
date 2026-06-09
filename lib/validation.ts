@@ -31,12 +31,12 @@ export const productSchema = z.object({
   price: z.coerce.number().positive("Price must be greater than 0"),
   unit: z.string().min(1).default("each"),
   categoryId: z.coerce.number().int().positive("Pick a category"),
-  // Local public-path only: `next/image` throws on remote hosts unless they're
-  // in next.config images.remotePatterns, which we don't configure.
+  // Required, local public-path only: `next/image` throws on an empty src and
+  // on remote hosts not listed in next.config images.remotePatterns (none set).
   image: z
     .string()
-    .default("")
-    .refine((v) => v === "" || v.startsWith("/"), {
+    .min(1, "Image path is required")
+    .refine((v) => v.startsWith("/"), {
       message:
         "Image must be a local path starting with / (e.g. /products/drill.png)",
     }),
