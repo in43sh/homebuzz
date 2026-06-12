@@ -4,6 +4,11 @@ import {
   categories as categoriesTable,
   products as productsTable,
   users as usersTable,
+  orders as ordersTable,
+  orderItems as orderItemsTable,
+  carts as cartsTable,
+  cartItems as cartItemsTable,
+  reviews as reviewsTable,
 } from "./schema";
 import { categories as categorySeed } from "../lib/categories";
 import { products as productSeed } from "../lib/mock-products";
@@ -11,7 +16,14 @@ import { products as productSeed } from "../lib/mock-products";
 async function main() {
   console.log("Seeding database…");
 
-  // Idempotent: clear in FK-safe order.
+  // Idempotent: clear in FK-safe order. orders/order_items use ON DELETE
+  // restrict against users/products, so they must go first or a reseed after
+  // any checkout fails.
+  await db.delete(orderItemsTable);
+  await db.delete(ordersTable);
+  await db.delete(cartItemsTable);
+  await db.delete(cartsTable);
+  await db.delete(reviewsTable);
   await db.delete(productsTable);
   await db.delete(categoriesTable);
   await db.delete(usersTable);
