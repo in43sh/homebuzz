@@ -121,8 +121,10 @@ export async function getCart(): Promise<CartView> {
   return cartId ? viewForCart(cartId) : EMPTY;
 }
 
+const MAX_QUANTITY = 999;
+
 export async function addItem(productId: number, quantity = 1): Promise<void> {
-  if (!Number.isInteger(quantity) || quantity < 1) return;
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) return;
 
   const cartId = await resolveCartId(true);
   if (!cartId) return;
@@ -141,9 +143,10 @@ export async function addItem(productId: number, quantity = 1): Promise<void> {
     .limit(1);
 
   if (existing) {
+    const newQty = Math.min(existing.quantity + quantity, MAX_QUANTITY);
     await db
       .update(cartItems)
-      .set({ quantity: existing.quantity + quantity })
+      .set({ quantity: newQty })
       .where(eq(cartItems.id, existing.id));
   } else {
     await db.insert(cartItems).values({
@@ -166,9 +169,11 @@ export async function setItemQuantity(
     await removeItem(productId);
     return;
   }
+
+  const capped = Math.min(quantity, MAX_QUANTITY);
   await db
     .update(cartItems)
-    .set({ quantity })
+    .set({ quantity: capped })
     .where(
       and(eq(cartItems.cartId, cartId), eq(cartItems.productId, productId)),
     );
