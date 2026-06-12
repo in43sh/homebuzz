@@ -122,6 +122,8 @@ export async function getCart(): Promise<CartView> {
 }
 
 export async function addItem(productId: number, quantity = 1): Promise<void> {
+  if (!Number.isInteger(quantity) || quantity < 1) return;
+
   const cartId = await resolveCartId(true);
   if (!cartId) return;
 
@@ -160,7 +162,7 @@ export async function setItemQuantity(
   const cartId = await resolveCartId(false);
   if (!cartId) return;
 
-  if (quantity <= 0) {
+  if (!Number.isInteger(quantity) || quantity <= 0) {
     await removeItem(productId);
     return;
   }
