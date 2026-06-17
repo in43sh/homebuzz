@@ -1,0 +1,190 @@
+{
+  "name": "Homebuzz",
+  "description": "A Next.js 16 App Router e-commerce app for a home-improvement store. Server Components read the catalog, Server Actions perform all mutations, NextAuth v5 (JWT credentials) handles auth, and Drizzle ORM talks to Neon Postgres.",
+  "categories": [
+    { "id": "actor",    "label": "Actor",      "color": "#e879f9" },
+    { "id": "client",   "label": "Client",     "color": "#38bdf8" },
+    { "id": "server",   "label": "Server",     "color": "#4ade80" },
+    { "id": "data",     "label": "Data store", "color": "#fbbf24" },
+    { "id": "job",      "label": "Background", "color": "#fb923c" },
+    { "id": "external", "label": "External",   "color": "#f87171" }
+  ],
+  "nodes": [
+    { "id": "shopper", "label": "Shopper", "category": "actor", "detail": "Customer or guest browsing & buying" },
+    { "id": "admin", "label": "Admin", "category": "actor", "detail": "Manages the product catalog" },
+    { "id": "pages", "label": "App Router pages (RSC)", "category": "client", "path": "app/", "detail": "Server-rendered store, product, cart, account, admin pages" },
+    { "id": "client-components", "label": "Client components", "category": "client", "path": "components/", "detail": "AddToCart, CartControls, AuthForm, ProductForm, ReviewForm" },
+    { "id": "server-actions", "label": "Server Actions", "category": "server", "path": "app/actions/", "detail": "\"use server\" mutations + revalidatePath" },
+    { "id": "auth", "label": "NextAuth config", "category": "server", "path": "auth.ts", "detail": "Credentials authorize(), JWT/session callbacks" },
+    { "id": "auth-route", "label": "NextAuth route", "category": "server", "path": "app/api/auth/[...nextauth]/route.ts", "detail": "GET/POST handlers for sign-in/out" },
+    { "id": "lib-products", "label": "Catalog reads", "category": "server", "path": "lib/products.ts", "detail": "getProducts / getProduct / getRelatedProducts" },
+    { "id": "lib-cart", "label": "Cart logic", "category": "server", "path": "lib/cart.ts", "detail": "Resolve cart (user vs guest cart_token cookie), items, merge" },
+    { "id": "lib-orders", "label": "Checkout / orders", "category": "server", "path": "lib/orders.ts", "detail": "Atomic stock decrement, order creation" },
+    { "id": "lib-reviews", "label": "Reviews", "category": "server", "path": "lib/reviews.ts", "detail": "Purchase-gated upsert, rating recompute" },
+    { "id": "lib-admin", "label": "Admin product CRUD", "category": "server", "path": "lib/admin.ts", "detail": "isAdmin gate, create/update/delete products" },
+    { "id": "db", "label": "Drizzle client + schema", "category": "data", "path": "db/index.ts, db/schema.ts", "detail": "products, categories, carts, cart_items, orders, order_items, reviews, users" },
+    { "id": "neon", "label": "Neon Postgres", "category": "external", "detail": "Hosted Postgres (pooled app conn + unpooled migration conn)" },
+    { "id": "seed", "label": "DB seed / migrate", "category": "job", "path": "db/seed.ts", "detail": "npm run db:seed; drizzle-kit migrate" }
+  ],
+  "edges": [
+    { "from": "shopper", "to": "pages", "label": "HTTP request" },
+    { "from": "pages", "to": "lib-products", "label": "read catalog" },
+    { "from": "lib-products", "to": "db", "label": "drizzle select" },
+    { "from": "db", "to": "neon", "label": "SQL" },
+    { "from": "neon", "to": "db", "label": "rows" },
+    { "from": "db", "to": "pages", "label": "data" },
+    { "from": "pages", "to": "shopper", "label": "rendered HTML" },
+    { "from": "shopper", "to": "client-components", "label": "interact" },
+    { "from": "shopper", "to": "server-actions", "label": "submit form" },
+    { "from": "admin", "to": "client-components", "label": "interact" },
+    { "from": "client-components", "to": "server-actions", "label": "invoke action" },
+    { "from": "client-components", "to": "auth-route", "label": "signIn()" },
+    { "from": "server-actions", "to": "lib-cart", "label": "cart ops" },
+    { "from": "server-actions", "to": "lib-orders", "label": "placeOrder()" },
+    { "from": "server-actions", "to": "lib-reviews", "label": "upsertReview()" },
+    { "from": "server-actions", "to": "lib-admin", "label": "CRUD" },
+    { "from": "server-actions", "to": "db", "label": "registerUser insert" },
+    { "from": "server-actions", "to": "pages", "label": "revalidatePath" },
+    { "from": "server-actions", "to": "client-components", "label": "result" },
+    { "from": "server-actions", "to": "shopper", "label": "redirect" },
+    { "from": "server-actions", "to": "admin", "label": "redirect" },
+    { "from": "lib-cart", "to": "db", "label": "carts / cart_items" },
+    { "from": "lib-cart", "to": "server-actions", "label": "cart view" },
+    { "from": "lib-orders", "to": "auth", "label": "require session" },
+    { "from": "lib-orders", "to": "lib-cart", "label": "getCart / clearCart" },
+    { "from": "lib-orders", "to": "db", "label": "stock txn + order" },
+    { "from": "lib-orders", "to": "server-actions", "label": "result" },
+    { "from": "lib-reviews", "to": "auth", "label": "session user" },
+    { "from": "lib-reviews", "to": "db", "label": "reviews + rating" },
+    { "from": "lib-admin", "to": "auth", "label": "role check" },
+    { "from": "lib-admin", "to": "db", "label": "products write" },
+    { "from": "auth-route", "to": "auth", "label": "handlers" },
+    { "from": "auth", "to": "db", "label": "select user" },
+    { "from": "db", "to": "auth", "label": "user row" },
+    { "from": "auth", "to": "client-components", "label": "session" },
+    { "from": "seed", "to": "db", "label": "bulk write" },
+    { "from": "db", "to": "seed", "label": "done" }
+  ],
+  "flows": [
+    {
+      "id": "checkout",
+      "name": "Checkout / place order",
+      "description": "Turn the signed-in user's cart into an order, decrementing stock atomically.",
+      "steps": [
+        { "from": "shopper", "to": "server-actions", "label": "Submit checkout form", "detail": "placeOrderAction() — app/actions/orders.ts" },
+        { "from": "server-actions", "to": "lib-orders", "label": "placeOrder()", "detail": "lib/orders.ts" },
+        { "from": "lib-orders", "to": "auth", "label": "Require session", "detail": "auth() — else redirect /signin" },
+        { "from": "lib-orders", "to": "lib-cart", "label": "getCart()", "detail": "Read current cart lines + subtotal" },
+        { "from": "lib-orders", "to": "db", "label": "Transaction: guard stock, insert order + items", "detail": "UPDATE products SET stock-=qty WHERE stock>=qty; INSERT orders/order_items" },
+        { "from": "db", "to": "neon", "label": "BEGIN…COMMIT", "detail": "Rolls back if any line is short (OutOfStockError)" },
+        { "from": "lib-orders", "to": "lib-cart", "label": "clearCart()", "detail": "Empty the cart on success" },
+        { "from": "lib-orders", "to": "server-actions", "label": "{ ok, id }", "detail": "or { ok:false, reason }" },
+        { "from": "server-actions", "to": "shopper", "label": "redirect /account/orders/[id]", "detail": "revalidate / and /store first" }
+      ]
+    },
+    {
+      "id": "browse",
+      "name": "Browse / search catalog",
+      "description": "Server-rendered store listing, optionally filtered by category or query.",
+      "steps": [
+        { "from": "shopper", "to": "pages", "label": "GET /store?q=…", "detail": "app/store/page.tsx (RSC)" },
+        { "from": "pages", "to": "lib-products", "label": "getProducts({ category, q })", "detail": "lib/products.ts" },
+        { "from": "lib-products", "to": "db", "label": "select + ilike filter", "detail": "join categories, order by onSale" },
+        { "from": "db", "to": "neon", "label": "SQL over pooled conn", "detail": "prepare:false (PgBouncer txn mode)" },
+        { "from": "neon", "to": "db", "label": "result rows" },
+        { "from": "db", "to": "pages", "label": "Product[]" },
+        { "from": "pages", "to": "shopper", "label": "Rendered HTML", "detail": "ProductGrid / ProductCard" }
+      ]
+    },
+    {
+      "id": "add-to-cart",
+      "name": "Add to cart (guest)",
+      "description": "A guest adds an item; a cart is created lazily and keyed by an httpOnly cookie.",
+      "steps": [
+        { "from": "shopper", "to": "client-components", "label": "Click \"Add to cart\"", "detail": "AddToCartButton.tsx" },
+        { "from": "client-components", "to": "server-actions", "label": "addToCartAction(productId, qty)", "detail": "app/actions/cart.ts" },
+        { "from": "server-actions", "to": "lib-cart", "label": "cart.addItem()", "detail": "lib/cart.ts" },
+        { "from": "lib-cart", "to": "db", "label": "resolveCartId(create) + insert cart_items", "detail": "Sets cart_token cookie for guests" },
+        { "from": "db", "to": "neon", "label": "INSERT / UPDATE" },
+        { "from": "lib-cart", "to": "server-actions", "label": "done" },
+        { "from": "server-actions", "to": "pages", "label": "revalidatePath('/', 'layout')", "detail": "Header cart count re-renders" },
+        { "from": "server-actions", "to": "client-components", "label": "resolves", "detail": "UI reflects new count" }
+      ]
+    },
+    {
+      "id": "signup",
+      "name": "Sign up",
+      "description": "Register a new credentials user, then immediately sign in.",
+      "steps": [
+        { "from": "shopper", "to": "client-components", "label": "Submit signup form", "detail": "AuthForm.tsx (mode=signup)" },
+        { "from": "client-components", "to": "server-actions", "label": "registerUser(values)", "detail": "app/actions/auth.ts" },
+        { "from": "server-actions", "to": "db", "label": "Check email unique + insert user", "detail": "bcrypt.hash; backstops 23505 race" },
+        { "from": "db", "to": "neon", "label": "INSERT users" },
+        { "from": "server-actions", "to": "client-components", "label": "{ ok: true }" },
+        { "from": "client-components", "to": "auth-route", "label": "signIn('credentials')", "detail": "Continues into the sign-in flow" }
+      ]
+    },
+    {
+      "id": "signin-merge",
+      "name": "Sign in + merge guest cart",
+      "description": "Authenticate via credentials, then fold any guest cart into the user's cart.",
+      "steps": [
+        { "from": "shopper", "to": "client-components", "label": "Submit credentials", "detail": "AuthForm.tsx" },
+        { "from": "client-components", "to": "auth-route", "label": "POST signIn('credentials')", "detail": "next-auth/react" },
+        { "from": "auth-route", "to": "auth", "label": "handlers → authorize()", "detail": "auth.ts" },
+        { "from": "auth", "to": "db", "label": "select user by email; bcrypt.compare", "detail": "users_email_idx" },
+        { "from": "db", "to": "auth", "label": "user row" },
+        { "from": "auth", "to": "client-components", "label": "JWT session set", "detail": "token.id / token.role" },
+        { "from": "client-components", "to": "server-actions", "label": "mergeGuestCartAction()", "detail": "app/actions/cart.ts" },
+        { "from": "server-actions", "to": "lib-cart", "label": "mergeGuestCartIntoUser()", "detail": "lib/cart.ts" },
+        { "from": "lib-cart", "to": "db", "label": "Fold guest cart_items, drop guest cart + cookie" }
+      ]
+    },
+    {
+      "id": "review",
+      "name": "Submit a review",
+      "description": "A verified purchaser leaves or updates a rating; the product aggregate is recomputed.",
+      "steps": [
+        { "from": "shopper", "to": "client-components", "label": "Submit review", "detail": "ReviewForm.tsx" },
+        { "from": "client-components", "to": "server-actions", "label": "submitReviewAction(productId, slug, values)", "detail": "app/actions/reviews.ts" },
+        { "from": "server-actions", "to": "lib-reviews", "label": "upsertReview()", "detail": "lib/reviews.ts" },
+        { "from": "lib-reviews", "to": "auth", "label": "Session user", "detail": "auth() — else not signed in" },
+        { "from": "lib-reviews", "to": "db", "label": "hasPurchased gate; upsert review; recompute rating", "detail": "join order_items; UPDATE products.rating*" },
+        { "from": "db", "to": "neon", "label": "SELECT / INSERT / UPDATE" },
+        { "from": "server-actions", "to": "pages", "label": "revalidatePath('/product/[slug]')" },
+        { "from": "server-actions", "to": "client-components", "label": "{ ok: true }" }
+      ]
+    },
+    {
+      "id": "admin-save",
+      "name": "Admin saves a product",
+      "description": "An admin creates or edits a product through the admin form.",
+      "steps": [
+        { "from": "admin", "to": "client-components", "label": "Submit ProductForm", "detail": "components/admin/ProductForm.tsx" },
+        { "from": "client-components", "to": "server-actions", "label": "saveProductAction(id, values)", "detail": "app/actions/admin.ts" },
+        { "from": "server-actions", "to": "lib-admin", "label": "isAdmin(); create/updateProduct()", "detail": "lib/admin.ts" },
+        { "from": "lib-admin", "to": "auth", "label": "Role check", "detail": "auth() — role === 'admin'" },
+        { "from": "lib-admin", "to": "db", "label": "INSERT/UPDATE products (unique slug)" },
+        { "from": "db", "to": "neon", "label": "INSERT / UPDATE" },
+        { "from": "server-actions", "to": "pages", "label": "revalidate /admin/products, /store, /" },
+        { "from": "server-actions", "to": "admin", "label": "redirect /admin/products" }
+      ]
+    },
+    {
+      "id": "seed",
+      "name": "Seed the database",
+      "description": "Developer script clears tables (FK-safe order) and loads categories, products, and users.",
+      "steps": [
+        { "from": "seed", "to": "db", "label": "delete (FK-safe) + insert seed data", "detail": "node db/seed.ts" },
+        { "from": "db", "to": "neon", "label": "bulk DELETE / INSERT" },
+        { "from": "neon", "to": "db", "label": "ok" },
+        { "from": "db", "to": "seed", "label": "done" }
+      ]
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-06-17",
+    "sourceCommit": "e9712c3",
+    "notes": "The guest-cart cart_token httpOnly cookie is modeled inside lib-cart rather than as its own node. Server Action revalidatePath calls are drawn as server-actions→pages edges. Form-action checkout is drawn as shopper→server-actions (the cart page renders the form). drizzle-kit migrate is grouped with the seed node."
+  }
+}
