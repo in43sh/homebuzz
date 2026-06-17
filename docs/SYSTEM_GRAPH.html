@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Homebuzz — Architecture Map</title>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --panel: #131a26;
+    --panel-2: #0f1622;
+    --border: #243042;
+    --text: #e6edf6;
+    --muted: #8a98ad;
+    --rail: 320px;
+    --edge: #2c3a4f;
+    --edge-strong: #fde68a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+  header.top {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    background: linear-gradient(180deg, #101826, #0b0f17);
+  }
+  header.top h1 { font-size: 18px; margin: 0; letter-spacing: .2px; }
+  header.top .desc { color: var(--muted); font-size: 12.5px; max-width: 720px; }
+  .layout { flex: 1; display: flex; min-height: 0; }
+
+  /* Side rail */
+  aside.rail {
+    width: var(--rail); flex: none; border-right: 1px solid var(--border);
+    background: var(--panel-2); display: flex; flex-direction: column; min-height: 0;
+  }
+  .rail h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 16px 16px 8px; flex: none; }
+  #flows { overflow-y: auto; padding: 0 12px 12px; flex: 1 1 0; min-height: 96px; }
+  .flow {
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 8px; cursor: pointer; background: var(--panel); transition: border-color .15s, background .15s;
+  }
+  .flow:hover { border-color: #3a4b66; }
+  .flow.active { border-color: var(--edge-strong); background: #1b2336; box-shadow: 0 0 0 1px rgba(253,230,138,.25) inset; }
+  .flow .name { font-weight: 650; font-size: 13.5px; }
+  .flow .fdesc { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .controls { padding: 12px 16px; border-top: 1px solid var(--border); flex: none; }
+  button.reset {
+    width: 100%; padding: 9px 12px; border-radius: 9px; cursor: pointer;
+    background: #1b2336; color: var(--text); border: 1px solid var(--border); font-weight: 600;
+  }
+  button.reset:hover { border-color: #3a4b66; }
+
+  /* Steps panel */
+  #steps-host { flex: 1 1 0; min-height: 0; flex-direction: column; border-top: 1px solid var(--border); }
+  #steps-host .steps-scroll { flex: 1 1 0; min-height: 0; }
+  .steps-wrap { margin-top: 8px; }
+  ol.steps { list-style: none; margin: 0; padding: 0 4px; }
+  ol.steps li { display: flex; gap: 9px; padding: 7px 0; border-bottom: 1px solid #1b2433; }
+  ol.steps li:last-child { border-bottom: 0; }
+  .stepnum {
+    flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--edge-strong); color: #2a1c00;
+    font-size: 11px; font-weight: 800; display: grid; place-items: center; margin-top: 1px;
+  }
+  .steptext .route { font-size: 11px; color: var(--muted); }
+  .steptext .route b { color: var(--text); font-weight: 600; }
+  .steptext .lbl { font-size: 12.5px; }
+  .steptext .det { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+
+  /* Canvas / columns */
+  .canvas { position: relative; flex: 1; overflow: auto; min-width: 0; }
+  #board {
+    position: relative; display: flex; gap: 30px; padding: 24px 30px 60px; min-width: max-content; align-items: flex-start;
+  }
+  svg.overlay { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; z-index: 5; }
+  .column { flex: none; width: 210px; }
+  .column h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .1em; margin: 0 0 10px;
+    display: flex; align-items: center; gap: 8px; color: var(--muted);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .node {
+    position: relative; border: 1px solid var(--border); border-left-width: 4px; border-radius: 10px;
+    background: var(--panel); padding: 9px 11px; margin-bottom: 12px; transition: opacity .18s, box-shadow .18s, border-color .18s, transform .18s;
+  }
+  .node .nlabel { font-weight: 650; font-size: 13px; }
+  .node .npath { font-size: 11px; color: #7fd1ff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 3px; word-break: break-all; }
+  .node .ndetail { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  .node.badge::after {
+    content: attr(data-badge); position: absolute; top: -9px; right: -9px;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--edge-strong); color: #2a1c00;
+    font-size: 11px; font-weight: 800; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--bg);
+  }
+  /* dimming when a flow is active */
+  body.flow-active .node { opacity: .28; }
+  body.flow-active .node.in-flow { opacity: 1; box-shadow: 0 0 0 1px var(--edge-strong), 0 6px 20px rgba(0,0,0,.4); }
+  body.flow-active .column h3 { opacity: .5; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+  .legend .item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+  .meta { font-size: 11px; color: var(--muted); margin: 10px 16px 14px; border-top: 1px solid var(--border); padding-top: 10px; flex: none; max-height: 22vh; overflow-y: auto; }
+  .meta code { color: #7fd1ff; }
+</style>
+</head>
+<body>
+  <header class="top">
+    <h1 id="title"></h1>
+    <span class="desc" id="desc"></span>
+    <div class="legend" id="legend"></div>
+  </header>
+
+  <div class="layout">
+    <aside class="rail">
+      <h2>Flows</h2>
+      <div id="flows"></div>
+      <div class="steps-wrap" id="steps-host" style="display:none">
+        <h2>Steps</h2>
+        <div class="steps-scroll" style="overflow-y:auto; padding-bottom:8px">
+          <ol class="steps" id="steps"></ol>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="reset" id="reset">Clear selection</button>
+      </div>
+      <div class="meta" id="meta"></div>
+    </aside>
+
+    <div class="canvas" id="canvas">
+      <div id="board">
+        <svg class="overlay" id="overlay"></svg>
+      </div>
+    </div>
+  </div>
+
+<script>
+const DATA = {
+  "name": "Homebuzz",
+  "description": "A Next.js 16 App Router e-commerce app for a home-improvement store. Server Components read the catalog, Server Actions perform all mutations, NextAuth v5 (JWT credentials) handles auth, and Drizzle ORM talks to Neon Postgres.",
+  "categories": [
+    { "id": "actor",    "label": "Actor",      "color": "#e879f9" },
+    { "id": "client",   "label": "Client",     "color": "#38bdf8" },
+    { "id": "server",   "label": "Server",     "color": "#4ade80" },
+    { "id": "data",     "label": "Data store", "color": "#fbbf24" },
+    { "id": "job",      "label": "Background", "color": "#fb923c" },
+    { "id": "external", "label": "External",   "color": "#f87171" }
+  ],
+  "nodes": [
+    { "id": "shopper", "label": "Shopper", "category": "actor", "detail": "Customer or guest browsing & buying" },
+    { "id": "admin", "label": "Admin", "category": "actor", "detail": "Manages the product catalog" },
+    { "id": "pages", "label": "App Router pages (RSC)", "category": "client", "path": "app/", "detail": "Server-rendered store, product, cart, account, admin pages" },
+    { "id": "client-components", "label": "Client components", "category": "client", "path": "components/", "detail": "AddToCart, CartControls, AuthForm, ProductForm, ReviewForm" },
+    { "id": "server-actions", "label": "Server Actions", "category": "server", "path": "app/actions/", "detail": "\"use server\" mutations + revalidatePath" },
+    { "id": "auth", "label": "NextAuth config", "category": "server", "path": "auth.ts", "detail": "Credentials authorize(), JWT/session callbacks" },
+    { "id": "auth-route", "label": "NextAuth route", "category": "server", "path": "app/api/auth/[...nextauth]/route.ts", "detail": "GET/POST handlers for sign-in/out" },
+    { "id": "lib-products", "label": "Catalog reads", "category": "server", "path": "lib/products.ts", "detail": "getProducts / getProduct / getRelatedProducts" },
+    { "id": "lib-cart", "label": "Cart logic", "category": "server", "path": "lib/cart.ts", "detail": "Resolve cart (user vs guest cart_token cookie), items, merge" },
+    { "id": "lib-orders", "label": "Checkout / orders", "category": "server", "path": "lib/orders.ts", "detail": "Atomic stock decrement, order creation" },
+    { "id": "lib-reviews", "label": "Reviews", "category": "server", "path": "lib/reviews.ts", "detail": "Purchase-gated upsert, rating recompute" },
+    { "id": "lib-admin", "label": "Admin product CRUD", "category": "server", "path": "lib/admin.ts", "detail": "isAdmin gate, create/update/delete products" },
+    { "id": "db", "label": "Drizzle client + schema", "category": "data", "path": "db/index.ts, db/schema.ts", "detail": "products, categories, carts, cart_items, orders, order_items, reviews, users" },
+    { "id": "neon", "label": "Neon Postgres", "category": "external", "detail": "Hosted Postgres (pooled app conn + unpooled migration conn)" },
+    { "id": "seed", "label": "DB seed / migrate", "category": "job", "path": "db/seed.ts", "detail": "npm run db:seed; drizzle-kit migrate" }
+  ],
+  "edges": [
+    { "from": "shopper", "to": "pages", "label": "HTTP request" },
+    { "from": "pages", "to": "lib-products", "label": "read catalog" },
+    { "from": "lib-products", "to": "db", "label": "drizzle select" },
+    { "from": "db", "to": "neon", "label": "SQL" },
+    { "from": "neon", "to": "db", "label": "rows" },
+    { "from": "db", "to": "pages", "label": "data" },
+    { "from": "pages", "to": "shopper", "label": "rendered HTML" },
+    { "from": "shopper", "to": "client-components", "label": "interact" },
+    { "from": "shopper", "to": "server-actions", "label": "submit form" },
+    { "from": "admin", "to": "client-components", "label": "interact" },
+    { "from": "client-components", "to": "server-actions", "label": "invoke action" },
+    { "from": "client-components", "to": "auth-route", "label": "signIn()" },
+    { "from": "server-actions", "to": "lib-cart", "label": "cart ops" },
+    { "from": "server-actions", "to": "lib-orders", "label": "placeOrder()" },
+    { "from": "server-actions", "to": "lib-reviews", "label": "upsertReview()" },
+    { "from": "server-actions", "to": "lib-admin", "label": "CRUD" },
+    { "from": "server-actions", "to": "db", "label": "registerUser insert" },
+    { "from": "server-actions", "to": "pages", "label": "revalidatePath" },
+    { "from": "server-actions", "to": "client-components", "label": "result" },
+    { "from": "server-actions", "to": "shopper", "label": "redirect" },
+    { "from": "server-actions", "to": "admin", "label": "redirect" },
+    { "from": "lib-cart", "to": "db", "label": "carts / cart_items" },
+    { "from": "lib-cart", "to": "server-actions", "label": "cart view" },
+    { "from": "lib-orders", "to": "auth", "label": "require session" },
+    { "from": "lib-orders", "to": "lib-cart", "label": "getCart / clearCart" },
+    { "from": "lib-orders", "to": "db", "label": "stock txn + order" },
+    { "from": "lib-orders", "to": "server-actions", "label": "result" },
+    { "from": "lib-reviews", "to": "auth", "label": "session user" },
+    { "from": "lib-reviews", "to": "db", "label": "reviews + rating" },
+    { "from": "lib-admin", "to": "auth", "label": "role check" },
+    { "from": "lib-admin", "to": "db", "label": "products write" },
+    { "from": "auth-route", "to": "auth", "label": "handlers" },
+    { "from": "auth", "to": "db", "label": "select user" },
+    { "from": "db", "to": "auth", "label": "user row" },
+    { "from": "auth", "to": "client-components", "label": "session" },
+    { "from": "seed", "to": "db", "label": "bulk write" },
+    { "from": "db", "to": "seed", "label": "done" }
+  ],
+  "flows": [
+    {
+      "id": "checkout",
+      "name": "Checkout / place order",
+      "description": "Turn the signed-in user's cart into an order, decrementing stock atomically.",
+      "steps": [
+        { "from": "shopper", "to": "server-actions", "label": "Submit checkout form", "detail": "placeOrderAction() — app/actions/orders.ts" },
+        { "from": "server-actions", "to": "lib-orders", "label": "placeOrder()", "detail": "lib/orders.ts" },
+        { "from": "lib-orders", "to": "auth", "label": "Require session", "detail": "auth() — else redirect /signin" },
+        { "from": "lib-orders", "to": "lib-cart", "label": "getCart()", "detail": "Read current cart lines + subtotal" },
+        { "from": "lib-orders", "to": "db", "label": "Transaction: guard stock, insert order + items", "detail": "UPDATE products SET stock-=qty WHERE stock>=qty; INSERT orders/order_items" },
+        { "from": "db", "to": "neon", "label": "BEGIN…COMMIT", "detail": "Rolls back if any line is short (OutOfStockError)" },
+        { "from": "lib-orders", "to": "lib-cart", "label": "clearCart()", "detail": "Empty the cart on success" },
+        { "from": "lib-orders", "to": "server-actions", "label": "{ ok, id }", "detail": "or { ok:false, reason }" },
+        { "from": "server-actions", "to": "shopper", "label": "redirect /account/orders/[id]", "detail": "revalidate / and /store first" }
+      ]
+    },
+    {
+      "id": "browse",
+      "name": "Browse / search catalog",
+      "description": "Server-rendered store listing, optionally filtered by category or query.",
+      "steps": [
+        { "from": "shopper", "to": "pages", "label": "GET /store?q=…", "detail": "app/store/page.tsx (RSC)" },
+        { "from": "pages", "to": "lib-products", "label": "getProducts({ category, q })", "detail": "lib/products.ts" },
+        { "from": "lib-products", "to": "db", "label": "select + ilike filter", "detail": "join categories, order by onSale" },
+        { "from": "db", "to": "neon", "label": "SQL over pooled conn", "detail": "prepare:false (PgBouncer txn mode)" },
+        { "from": "neon", "to": "db", "label": "result rows" },
+        { "from": "db", "to": "pages", "label": "Product[]" },
+        { "from": "pages", "to": "shopper", "label": "Rendered HTML", "detail": "ProductGrid / ProductCard" }
+      ]
+    },
+    {
+      "id": "add-to-cart",
+      "name": "Add to cart (guest)",
+      "description": "A guest adds an item; a cart is created lazily and keyed by an httpOnly cookie.",
+      "steps": [
+        { "from": "shopper", "to": "client-components", "label": "Click \"Add to cart\"", "detail": "AddToCartButton.tsx" },
+        { "from": "client-components", "to": "server-actions", "label": "addToCartAction(productId, qty)", "detail": "app/actions/cart.ts" },
+        { "from": "server-actions", "to": "lib-cart", "label": "cart.addItem()", "detail": "lib/cart.ts" },
+        { "from": "lib-cart", "to": "db", "label": "resolveCartId(create) + insert cart_items", "detail": "Sets cart_token cookie for guests" },
+        { "from": "db", "to": "neon", "label": "INSERT / UPDATE" },
+        { "from": "lib-cart", "to": "server-actions", "label": "done" },
+        { "from": "server-actions", "to": "pages", "label": "revalidatePath('/', 'layout')", "detail": "Header cart count re-renders" },
+        { "from": "server-actions", "to": "client-components", "label": "resolves", "detail": "UI reflects new count" }
+      ]
+    },
+    {
+      "id": "signup",
+      "name": "Sign up",
+      "description": "Register a new credentials user, then immediately sign in.",
+      "steps": [
+        { "from": "shopper", "to": "client-components", "label": "Submit signup form", "detail": "AuthForm.tsx (mode=signup)" },
+        { "from": "client-components", "to": "server-actions", "label": "registerUser(values)", "detail": "app/actions/auth.ts" },
+        { "from": "server-actions", "to": "db", "label": "Check email unique + insert user", "detail": "bcrypt.hash; backstops 23505 race" },
+        { "from": "db", "to": "neon", "label": "INSERT users" },
+        { "from": "server-actions", "to": "client-components", "label": "{ ok: true }" },
+        { "from": "client-components", "to": "auth-route", "label": "signIn('credentials')", "detail": "Continues into the sign-in flow" }
+      ]
+    },
+    {
+      "id": "signin-merge",
+      "name": "Sign in + merge guest cart",
+      "description": "Authenticate via credentials, then fold any guest cart into the user's cart.",
+      "steps": [
+        { "from": "shopper", "to": "client-components", "label": "Submit credentials", "detail": "AuthForm.tsx" },
+        { "from": "client-components", "to": "auth-route", "label": "POST signIn('credentials')", "detail": "next-auth/react" },
+        { "from": "auth-route", "to": "auth", "label": "handlers → authorize()", "detail": "auth.ts" },
+        { "from": "auth", "to": "db", "label": "select user by email; bcrypt.compare", "detail": "users_email_idx" },
+        { "from": "db", "to": "auth", "label": "user row" },
+        { "from": "auth", "to": "client-components", "label": "JWT session set", "detail": "token.id / token.role" },
+        { "from": "client-components", "to": "server-actions", "label": "mergeGuestCartAction()", "detail": "app/actions/cart.ts" },
+        { "from": "server-actions", "to": "lib-cart", "label": "mergeGuestCartIntoUser()", "detail": "lib/cart.ts" },
+        { "from": "lib-cart", "to": "db", "label": "Fold guest cart_items, drop guest cart + cookie" }
+      ]
+    },
+    {
+      "id": "review",
+      "name": "Submit a review",
+      "description": "A verified purchaser leaves or updates a rating; the product aggregate is recomputed.",
+      "steps": [
+        { "from": "shopper", "to": "client-components", "label": "Submit review", "detail": "ReviewForm.tsx" },
+        { "from": "client-components", "to": "server-actions", "label": "submitReviewAction(productId, slug, values)", "detail": "app/actions/reviews.ts" },
+        { "from": "server-actions", "to": "lib-reviews", "label": "upsertReview()", "detail": "lib/reviews.ts" },
+        { "from": "lib-reviews", "to": "auth", "label": "Session user", "detail": "auth() — else not signed in" },
+        { "from": "lib-reviews", "to": "db", "label": "hasPurchased gate; upsert review; recompute rating", "detail": "join order_items; UPDATE products.rating*" },
+        { "from": "db", "to": "neon", "label": "SELECT / INSERT / UPDATE" },
+        { "from": "server-actions", "to": "pages", "label": "revalidatePath('/product/[slug]')" },
+        { "from": "server-actions", "to": "client-components", "label": "{ ok: true }" }
+      ]
+    },
+    {
+      "id": "admin-save",
+      "name": "Admin saves a product",
+      "description": "An admin creates or edits a product through the admin form.",
+      "steps": [
+        { "from": "admin", "to": "client-components", "label": "Submit ProductForm", "detail": "components/admin/ProductForm.tsx" },
+        { "from": "client-components", "to": "server-actions", "label": "saveProductAction(id, values)", "detail": "app/actions/admin.ts" },
+        { "from": "server-actions", "to": "lib-admin", "label": "isAdmin(); create/updateProduct()", "detail": "lib/admin.ts" },
+        { "from": "lib-admin", "to": "auth", "label": "Role check", "detail": "auth() — role === 'admin'" },
+        { "from": "lib-admin", "to": "db", "label": "INSERT/UPDATE products (unique slug)" },
+        { "from": "db", "to": "neon", "label": "INSERT / UPDATE" },
+        { "from": "server-actions", "to": "pages", "label": "revalidate /admin/products, /store, /" },
+        { "from": "server-actions", "to": "admin", "label": "redirect /admin/products" }
+      ]
+    },
+    {
+      "id": "seed",
+      "name": "Seed the database",
+      "description": "Developer script clears tables (FK-safe order) and loads categories, products, and users.",
+      "steps": [
+        { "from": "seed", "to": "db", "label": "delete (FK-safe) + insert seed data", "detail": "node db/seed.ts" },
+        { "from": "db", "to": "neon", "label": "bulk DELETE / INSERT" },
+        { "from": "neon", "to": "db", "label": "ok" },
+        { "from": "db", "to": "seed", "label": "done" }
+      ]
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-06-17",
+    "sourceCommit": "e9712c3",
+    "notes": "The guest-cart cart_token httpOnly cookie is modeled inside lib-cart rather than as its own node. Server Action revalidatePath calls are drawn as server-actions→pages edges. Form-action checkout is drawn as shopper→server-actions (the cart page renders the form). drizzle-kit migrate is grouped with the seed node."
+  }
+};
+
+// ---- helpers ----
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, txt) {
+  const n = document.createElement(tag);
+  if (attrs) for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (txt != null) n.textContent = txt; // textContent escapes automatically
+  return n;
+}
+function svg(tag, attrs) {
+  const n = document.createElementNS(SVGNS, tag);
+  if (attrs) for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+}
+const nodeById = Object.fromEntries(DATA.nodes.map(n => [n.id, n]));
+const catById = Object.fromEntries(DATA.categories.map(c => [c.id, c]));
+const nodeEls = {}; // id -> element
+
+// Category colour of a node (used to colour a step by its SOURCE node).
+function catColor(nodeId) {
+  const n = nodeById[nodeId];
+  const c = n && catById[n.category];
+  return (c && c.color) || "#fde68a";
+}
+
+// ---- header ----
+document.getElementById("title").textContent = DATA.name + " — Architecture Map";
+document.getElementById("desc").textContent = DATA.description;
+const legend = document.getElementById("legend");
+DATA.categories.forEach(c => {
+  const item = el("span", { class: "item" });
+  const dot = el("span", { class: "dot" }); dot.style.background = c.color;
+  item.appendChild(dot); item.appendChild(document.createTextNode(c.label));
+  legend.appendChild(item);
+});
+const m = DATA.meta || {};
+const meta = document.getElementById("meta");
+meta.appendChild(document.createTextNode("Generated " + (m.generatedAt||"?") + " · commit "));
+const code = el("code", null, m.sourceCommit || "?"); meta.appendChild(code);
+if (m.notes) { meta.appendChild(el("br")); const s = el("span", null, m.notes); s.style.opacity=".85"; meta.appendChild(s); }
+
+// ---- columns ----
+const board = document.getElementById("board");
+const overlay = document.getElementById("overlay");
+DATA.categories.forEach(cat => {
+  const inCat = DATA.nodes.filter(n => n.category === cat.id);
+  if (inCat.length === 0) return; // drop empty category column
+  const col = el("div", { class: "column" });
+  const h = el("h3");
+  const dot = el("span", { class: "dot" }); dot.style.background = cat.color;
+  h.appendChild(dot); h.appendChild(document.createTextNode(cat.label));
+  col.appendChild(h);
+  inCat.forEach(n => {
+    const box = el("div", { class: "node", id: "node-" + n.id });
+    box.style.borderLeftColor = cat.color;
+    box.appendChild(el("div", { class: "nlabel" }, n.label));
+    if (n.path) box.appendChild(el("div", { class: "npath" }, n.path));
+    if (n.detail) box.appendChild(el("div", { class: "ndetail" }, n.detail));
+    col.appendChild(box);
+    nodeEls[n.id] = box;
+  });
+  board.appendChild(col);
+});
+
+// ---- connector drawing ----
+let activeFlow = null;
+
+function anchorPoints(aEl, bEl) {
+  // anchor on each box border facing the other box, in board-local coords
+  const board = document.getElementById("board");
+  const br = board.getBoundingClientRect();
+  const a = aEl.getBoundingClientRect();
+  const b = bEl.getBoundingClientRect();
+  const ax = a.left - br.left, ay = a.top - br.top;
+  const bx = b.left - br.left, by = b.top - br.top;
+  const acx = ax + a.width/2, acy = ay + a.height/2;
+  const bcx = bx + b.width/2, bcy = by + b.height/2;
+  // pick left/right border based on horizontal relation
+  let p1, p2;
+  if (bcx >= acx) { p1 = { x: ax + a.width, y: acy }; p2 = { x: bx, y: bcy }; }
+  else            { p1 = { x: ax, y: acy };           p2 = { x: bx + b.width, y: bcy }; }
+  return { p1, p2 };
+}
+
+function ensureArrowDefs() {
+  let defs = overlay.querySelector("defs");
+  if (defs) return;
+  defs = svg("defs");
+  const mk = (id, color) => {
+    const mk = svg("marker", { id, markerWidth: "9", markerHeight: "9", refX: "7", refY: "3", orient: "auto", markerUnits: "userSpaceOnUse" });
+    const p = svg("path", { d: "M0,0 L7,3 L0,6 Z", fill: color });
+    mk.appendChild(p); return mk;
+  };
+  // One arrowhead per category colour, so each connector's head matches its source.
+  DATA.categories.forEach(c => defs.appendChild(mk("arrow-" + c.id, c.color)));
+  defs.appendChild(mk("arrow-faint", "#2c3a4f"));
+  overlay.appendChild(defs);
+}
+
+function drawFaintEdges() {
+  DATA.edges.forEach(e => {
+    const a = nodeEls[e.from], b = nodeEls[e.to];
+    if (!a || !b) return;
+    const { p1, p2 } = anchorPoints(a, b);
+    const path = svg("path", {
+      d: "M" + p1.x + "," + p1.y + " L" + p2.x + "," + p2.y,
+      stroke: "#2c3a4f", "stroke-width": "1.4", fill: "none",
+      "marker-end": "url(#arrow-faint)", opacity: ".55"
+    });
+    overlay.appendChild(path);
+  });
+}
+
+function curveBetween(p1, p2, offset) {
+  // quadratic curve; offset bends the midpoint perpendicular to the segment
+  const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len, ny = dx / len;
+  const cx = mx + nx * offset, cy = my + ny * offset;
+  // point on the quadratic at t=0.5 for the badge
+  const bx = 0.25*p1.x + 0.5*cx + 0.25*p2.x;
+  const by = 0.25*p1.y + 0.5*cy + 0.25*p2.y;
+  return { d: "M" + p1.x + "," + p1.y + " Q" + cx + "," + cy + " " + p2.x + "," + p2.y, bx, by };
+}
+
+function drawFlow(flow) {
+  // count duplicate pairs to offset parallel steps
+  const pairSeen = {};
+  const pairTotal = {};
+  flow.steps.forEach(s => { const k = s.from + ">" + s.to; pairTotal[k] = (pairTotal[k]||0) + 1; });
+
+  flow.steps.forEach((s, i) => {
+    const a = nodeEls[s.from], b = nodeEls[s.to];
+    if (!a || !b) return;
+    const { p1, p2 } = anchorPoints(a, b);
+    const k = s.from + ">" + s.to;
+    const idx = (pairSeen[k] = (pairSeen[k]||0) + 1) - 1;
+    const total = pairTotal[k];
+    // base curvature so even single edges bow slightly; spread duplicates
+    let offset;
+    if (total === 1) {
+      offset = (Math.abs(p2.x - p1.x) < 4) ? 26 : 0; // bow vertical same-column links
+    } else {
+      const spread = 34;
+      offset = (idx - (total - 1) / 2) * spread * 2;
+      if (offset === 0) offset = 0.001;
+    }
+    const { d, bx, by } = curveBetween(p1, p2, offset);
+    // Colour the step by its SOURCE node's category — "who is acting".
+    const srcCat = nodeById[s.from] ? nodeById[s.from].category : null;
+    const color = catColor(s.from);
+    const path = svg("path", {
+      d, stroke: color, "stroke-width": "2.4", fill: "none",
+      "marker-end": "url(#arrow-" + (srcCat || "faint") + ")", "stroke-linecap": "round",
+      filter: "drop-shadow(0 0 4px " + color + "66)"
+    });
+    overlay.appendChild(path);
+    // badge with step number
+    const g = svg("g");
+    g.appendChild(svg("circle", { cx: bx, cy: by, r: "11", fill: color, stroke: "#0b0f17", "stroke-width": "2" }));
+    const t = svg("text", { x: bx, y: by + 4, "text-anchor": "middle", "font-size": "12", "font-weight": "800", fill: "#0b0f17" });
+    t.textContent = String(i + 1);
+    g.appendChild(t);
+    overlay.appendChild(g);
+  });
+}
+
+function sizeOverlay() {
+  const board = document.getElementById("board");
+  overlay.setAttribute("width", board.scrollWidth);
+  overlay.setAttribute("height", board.scrollHeight);
+  overlay.setAttribute("viewBox", "0 0 " + board.scrollWidth + " " + board.scrollHeight);
+}
+
+function redraw() {
+  while (overlay.firstChild) overlay.removeChild(overlay.firstChild);
+  sizeOverlay();
+  ensureArrowDefs();
+  if (activeFlow) drawFlow(activeFlow);
+  else drawFaintEdges();
+}
+
+// ---- selection ----
+function selectFlow(flow) {
+  activeFlow = flow;
+  document.body.classList.add("flow-active");
+  // node highlight + ordering badges
+  const order = {};
+  flow.steps.forEach((s, i) => { if (!(s.from in order)) order[s.from] = i + 1; });
+  // assign each node a first-touch step number (from-side)
+  Object.values(nodeEls).forEach(b => { b.classList.remove("in-flow", "badge"); b.removeAttribute("data-badge"); });
+  const touched = new Set();
+  flow.steps.forEach(s => { touched.add(s.from); touched.add(s.to); });
+  touched.forEach(id => { if (nodeEls[id]) nodeEls[id].classList.add("in-flow"); });
+
+  // flow list active state
+  document.querySelectorAll(".flow").forEach(f => f.classList.toggle("active", f.dataset.id === flow.id));
+
+  // steps panel
+  const host = document.getElementById("steps-host");
+  const ol = document.getElementById("steps");
+  while (ol.firstChild) ol.removeChild(ol.firstChild);
+  flow.steps.forEach((s, i) => {
+    const li = el("li");
+    const num = el("span", { class: "stepnum" }, String(i + 1));
+    num.style.background = catColor(s.from);
+    num.style.color = "#0b0f17";
+    li.appendChild(num);
+    const tx = el("div", { class: "steptext" });
+    const route = el("div", { class: "route" });
+    const fromB = el("b", null, nodeById[s.from] ? nodeById[s.from].label : s.from);
+    const toB = el("b", null, nodeById[s.to] ? nodeById[s.to].label : s.to);
+    route.appendChild(fromB); route.appendChild(document.createTextNode(" → ")); route.appendChild(toB);
+    tx.appendChild(route);
+    tx.appendChild(el("div", { class: "lbl" }, s.label || ""));
+    if (s.detail) tx.appendChild(el("div", { class: "det" }, s.detail));
+    li.appendChild(tx);
+    ol.appendChild(li);
+  });
+  host.style.display = "flex";
+  redraw();
+}
+
+function clearSelection() {
+  activeFlow = null;
+  document.body.classList.remove("flow-active");
+  Object.values(nodeEls).forEach(b => { b.classList.remove("in-flow", "badge"); b.removeAttribute("data-badge"); });
+  document.querySelectorAll(".flow").forEach(f => f.classList.remove("active"));
+  document.getElementById("steps-host").style.display = "none";
+  redraw();
+}
+
+// ---- flows list ----
+const flowsHost = document.getElementById("flows");
+DATA.flows.forEach(flow => {
+  const f = el("div", { class: "flow" });
+  f.dataset.id = flow.id;
+  f.appendChild(el("div", { class: "name" }, flow.name));
+  if (flow.description) f.appendChild(el("div", { class: "fdesc" }, flow.description));
+  f.addEventListener("click", () => selectFlow(flow));
+  flowsHost.appendChild(f);
+});
+document.getElementById("reset").addEventListener("click", clearSelection);
+
+// ---- redraw triggers ----
+window.addEventListener("resize", redraw);
+document.getElementById("canvas").addEventListener("scroll", redraw);
+window.addEventListener("load", () => requestAnimationFrame(redraw));
+
+// default selection (Stage 3): checkout
+const DEFAULT_FLOW = "checkout";
+const def = DATA.flows.find(f => f.id === DEFAULT_FLOW) || DATA.flows[0];
+requestAnimationFrame(() => { if (def) selectFlow(def); else redraw(); });
+</script>
+</body>
+</html>
