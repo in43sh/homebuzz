@@ -34,7 +34,7 @@ Persistence is **Neon Postgres** accessed through **Drizzle ORM**.
 
 ```mermaid
 flowchart TD
-  Browser["Browser<br/>(RSC payloads + minimal client JS)"]
+  Browser["Browser<br/>(RSC payloads<br/>+ minimal client JS)"]
 
   subgraph NextApp["Next.js 16 App (app/)"]
     Pages["Server Components<br/>app/**/page.tsx"]
