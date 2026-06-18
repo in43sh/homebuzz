@@ -4,7 +4,7 @@ A running log of things that weren't clear, and what turned out to be the answer
 
 Format:
 
-```
+```text
 ## Q: <the thing you didn't understand>
 **Confused by:** <what made it confusing>
 **Answer:** <what you figured out>
