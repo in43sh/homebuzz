@@ -692,3 +692,71 @@ export async function isAdmin() {
 ```
 
 Every admin action and the admin layout both call `isAdmin()`. Account pages call `auth()` directly and redirect to `/signin` if the result is null. There's no single central gatekeeping point — each protected surface checks itself.
+
+---
+
+## Part 5 — Conventions
+
+## The `{ ok, reason }` result pattern
+
+Most `lib/*` functions that can fail return a plain object instead of throwing:
+
+```ts
+// lib/orders.ts
+export async function placeOrder(): Promise<
+  | { ok: true; id: number }
+  | { ok: false; reason: "unauthenticated" | "out_of_stock"; items?: string[] }
+>
+```
+
+This shows up across `lib/reviews.ts` (`upsertReview`), `lib/orders.ts` (`placeOrder`), `lib/admin.ts` (`deleteProduct`), and `app/actions/auth.ts` (`registerUser`).
+
+### Why not just throw?
+
+Server Actions can throw, and Next.js will catch unhandled throws and show an error boundary. But the failures above are **expected business failures**, not bugs:
+
+- A user trying to review a product they didn't buy isn't a crash — it's a UI state.
+- Running out of stock mid-checkout isn't a crash — it's a banner on the cart page.
+- A duplicate email on signup isn't a crash — it's a form error.
+
+Throwing for these would mean catching errors in every Server Action call site, discarding the structured `reason`, and trying to reconstruct what went wrong from the error message. The result object keeps the reason typed and the action thin:
+
+```ts
+// app/actions/reviews.ts
+const result = await upsertReview(productId, rating, body);
+if (!result.ok) {
+  return {
+    ok: false,
+    error: result.reason === "not_purchased"
+      ? "You can only review products you've ordered"
+      : "You must be signed in to review",
+  };
+}
+revalidatePath(`/product/${slug}`);
+return { ok: true };
+```
+
+### The distinction: expected failure vs. unexpected error
+
+| Situation | Approach | Why |
+| --------- | --------- | --- |
+| Business rule rejected (not purchased, out of stock) | Return `{ ok: false, reason }` | Typed, actionable, UI can respond |
+| Programming error, DB constraint violation bug | Let it throw | Caught by error boundary; is a real bug |
+| FK violation blocking a delete | Catch specifically, return `{ ok: false, error }` | The FK block is intentional behavior |
+
+The rule of thumb: if you'd write a user-facing error message for it, return `{ ok: false }`. If it would be a bug report, let it throw.
+
+### On the client side
+
+Client Components receive the `{ ok }` object and set local state:
+
+```tsx
+// components/auth/AuthForm.tsx
+const result = await registerUser(values);
+if (!result.ok) {
+  setFormError(result.error); // inline error below the form field
+  return;
+}
+```
+
+Nothing about this requires a `try/catch` on the client — the action itself is the only thing that can be in an error state, and it surfaces that cleanly through the return value.
