@@ -7,7 +7,7 @@ A from-scratch rebuild of **Homebuzz**, a home-improvement / hardware e-commerce
 recommended path to a clean, best-practices implementation. Architecture and scope are
 presented as **options** for you to choose.
 
-- **Figma:** https://www.figma.com/design/XapEJYnL4l2NFiUIEspMCL/BuildStore_new--Copy-?node-id=2-7089&p=f&m=dev
+- **Figma:** <https://www.figma.com/design/XapEJYnL4l2NFiUIEspMCL/BuildStore_new--Copy-?node-id=2-7089&p=f&m=dev>
 - **Date:** 2026-06-04
 
 ## TL;DR
@@ -25,14 +25,15 @@ architecture (§4) + scope (§5).** Defaults stand if you don't object.
 Three generations of the project live in `homebuzz-everything/`:
 
 | Repo | Stack | State | Useful for |
-|------|-------|-------|------------|
+| ---- | ----- | ----- | ---------- |
 | `homebuzz` | CRA + Redux + SCSS + styled-components, React 19, react-router 5 | Original. Most **features**: auth (PrivateRoute, `axiosWithAuth`), cart/redux, reviews, search bar, contact form, mobile menu | Feature reference, UX flows |
 | `homebuzz-backend` | Go 1.23 + Gin + Bun ORM + Postgres + JWT + Swagger | Current backend. Endpoints for auth + products | API reference, possible reuse |
 | `homebuzz-frontend` | Vite + React 19 + TS + Tailwind 4 + react-router 7 | Newest frontend, WIP. Marketing pages only | Design-aligned starting point |
 
 ### Known weaknesses to fix in the rebuild
 
-**Backend**
+#### Backend
+
 - Hardcoded JWT secret `"your_secret_key"` in source (`routes/user/user.go:28`).
 - No auth middleware — `DELETE /users/:id`, product mutations are unprotected.
 - No DB migrations / schema versioning.
@@ -44,7 +45,8 @@ Three generations of the project live in `homebuzz-everything/`:
 - No tests, no structured logging, no request validation layer beyond Gin bindings.
 - Errors/responses inconsistent (mix of typed structs and `gin.H`).
 
-**Frontend**
+#### Frontend
+
 - Newest frontend has no API wiring, no auth, no cart, no state management.
 - Old frontend has those features but on a dead stack (CRA, raw Redux, react-router 5).
 
@@ -58,7 +60,7 @@ display type, large product imagery.
 ### Screens in the design
 
 | Screen | Notes |
-|--------|-------|
+| ------ | ----- |
 | **Home** (Index, Index2 variants) | Hero banner ("Furniture Week"), "2M+ items" strip, Popular Products grid, promo banners, "Inspire Yourself with Tutorials", "WE DELIVER" delivery banner, prefooter, footer |
 | **Login / Sign up** (`main-login`) | Auth |
 | **Store — Product list** | Catalog grid with category header nav |
@@ -120,7 +122,7 @@ Image · title · star rating (`blocks/stars`) · `price-per` (price + unit, e.g
 
 ### Design tokens (Figma variables → seed `tailwind`/CSS vars)
 
-```
+```text
 Colors
   --slate-700  #353B3E   (primary dark)
   --ink-900    #1B1E1F   (near-black text/bg)
@@ -144,7 +146,7 @@ Type — Inter
 
 Expand beyond today's thin models. Minimum for a real store:
 
-```
+```text
 User        id, email (unique), password_hash, name, role(customer|admin),
             created_at, updated_at
 Category    id, name, slug, icon, parent_id (nullable, for nesting)
@@ -185,7 +187,7 @@ and snapshot `unit_price` at add-time so price changes don't mutate an open cart
 
 Server actions in Option B; REST routes in A/C. Same operations either way.
 
-```
+```text
 Catalog   GET  /products?category=&q=&sort=&page=     list + filter + search + paginate
           GET  /products/:slug                        detail
           GET  /categories                            nav
@@ -208,9 +210,9 @@ Every mutation behind auth middleware; admin routes behind a role check.
 Pick one. All three deliver the same UI; they differ in operational complexity and
 hosting fit.
 
-### Option A — Split: Go API + React SPA  *(closest to current direction)*
+### Option A — Split: Go API + React SPA *(closest to current direction)*
 
-```
+```text
 homebuzz-api  (Go/Gin/Bun/Postgres, cleaned up)
 homebuzz-web  (Vite + React 19 + TS + Tailwind 4)
 ```
@@ -221,9 +223,9 @@ homebuzz-web  (Vite + React 19 + TS + Tailwind 4)
   (token storage), no shared types without codegen.
 - **Best when:** You want to keep Go and treat web as a pure client.
 
-### Option B — Next.js fullstack monorepo  *(best Vercel fit, least infra)* ⭐ recommended default
+### Option B — Next.js fullstack monorepo *(best Vercel fit, least infra)* ⭐ recommended default
 
-```
+```text
 homebuzz/  (Next.js App Router: UI + Route Handlers + Server Actions)
            Postgres via Drizzle or Prisma
            Auth.js (NextAuth) or Clerk
@@ -235,9 +237,9 @@ homebuzz/  (Next.js App Router: UI + Route Handlers + Server Actions)
 - **Cons:** Leaves the Go backend behind; couples UI and API in one runtime.
 - **Best when:** Speed-to-ship, SEO, and simplicity matter most (typical for a storefront).
 
-### Option C — Turborepo: Next.js web + Go API  *(separation + SSR)*
+### Option C — Turborepo: Next.js web + Go API *(separation + SSR)*
 
-```
+```text
 apps/web   (Next.js App Router, SSR storefront)
 apps/api   (Go/Gin service)
 packages/  (shared ui, config, types via OpenAPI codegen)
@@ -250,7 +252,7 @@ packages/  (shared ui, config, types via OpenAPI codegen)
 - **Best when:** You value the Go backend AND want SSR + a future admin/mobile client.
 
 | Criterion | A: Go+SPA | B: Next.js | C: Turbo+Go |
-|-----------|:---------:|:----------:|:-----------:|
+| --------- | :-------: | :--------: | :---------: |
 | Time to v1 | medium | **fast** | slow |
 | SEO/SSR | ✗ | ✓ | ✓ |
 | Reuse Go backend | ✓ | ✗ | ✓ |
@@ -266,7 +268,7 @@ Choose **C** if keeping the Go backend is a hard requirement.
 Concrete defaults so Phase 0 isn't a research project. Swap any line if you disagree.
 
 | Concern | Pick | Why |
-|---------|------|-----|
+| ------- | ---- | --- |
 | Framework | Next.js 16 (App Router) | RSC, server actions, ISR for catalog |
 | Language | TypeScript (strict) | shared types end-to-end |
 | Styling | Tailwind 4 + CSS vars from tokens | matches Figma vars |
@@ -287,16 +289,19 @@ Concrete defaults so Phase 0 isn't a research project. Swap any line if you disa
 
 Ship in slices. Each builds on the previous.
 
-### Slice 1 — Marketing + catalog browse  *(smallest)*
+### Slice 1 — Marketing + catalog browse *(smallest)*
+
 Home, Store product list, Product details, Privacy, error pages. Products read from DB.
 No auth, no cart. **Gets the design live fastest.**
 
-### Slice 2 — Catalog + cart + auth  ⭐ suggested v1
+### Slice 2 — Catalog + cart + auth ⭐ suggested v1
+
 Slice 1 **plus**: sign up / sign in, user account page, cart (add/update/remove,
 persisted), product search + category filter + pagination.
 **A complete, usable store without payment risk.**
 
 ### Slice 3 — Full e-commerce
+
 Slice 2 **plus**: checkout + orders, reviews, admin product management (CRUD + image
 upload). Payments (Stripe) optional but natural here.
 
@@ -325,14 +330,16 @@ Park these in a backlog; don't let them grow v1.
 
 ## 6. Best-practices checklist
 
-**Shared**
+### Shared
+
 - TypeScript strict everywhere; ESLint + Prettier; commit hooks (lint-staged + husky).
 - Conventional Commits; CI on PR (lint, typecheck, test, build).
 - Secrets in env (never in source); `.env.example` committed.
 - Design tokens from Figma → single source (Tailwind theme / CSS vars).
 - Component library mirrors Figma `blocks/*` and `buttons/*` naming.
 
-**Frontend**
+### Frontend
+
 - Tailwind 4 with tokenized theme; responsive at 375/768/1280/1920.
 - Accessible components (semantic HTML, focus states, alt text, color contrast).
 - Data fetching: TanStack Query (SPA) or RSC + server actions (Next.js).
@@ -340,7 +347,8 @@ Park these in a backlog; don't let them grow v1.
 - Storybook for the design-system components (optional but recommended).
 - Image optimization; lazy-load product grids.
 
-**Backend / data**
+### Backend / data
+
 - Real auth: hashed passwords (bcrypt/argon2), JWT or session, **auth middleware on
   mutations**, role checks for admin.
 - DB migrations (Drizzle/Prisma, or `golang-migrate` for Go).
@@ -349,15 +357,18 @@ Park these in a backlog; don't let them grow v1.
 - Structured logging, request IDs, basic rate limiting.
 - OpenAPI/Swagger kept in sync (already present in Go backend).
 
-**Testing**
+### Testing
+
 - Unit (Vitest / Go test), integration (API + DB via testcontainers), E2E (Playwright)
   for the core flows: browse → add to cart → sign in → checkout.
 
-**Deploy**
+### Deploy
+
 - Next.js → Vercel. Postgres → Neon / Vercel Marketplace. Go API → Render/Fly/Railway.
 - Preview deploys per PR; production promotion on merge to `main`.
 
-**Quality bars (non-functional targets)**
+### Quality bars (non-functional targets)
+
 - Lighthouse ≥ 90 perf / SEO / a11y; Core Web Vitals green (LCP < 2.5s, CLS < 0.1).
 - WCAG 2.1 AA: keyboard nav, focus visible, alt text, AA contrast (verify yellow-on-dark).
 - SEO: per-page metadata, OpenGraph, sitemap, JSON-LD `Product` schema on PDPs.
@@ -371,7 +382,7 @@ Park these in a backlog; don't let them grow v1.
 > Estimates are solo-dev rough order-of-magnitude, not commitments.
 
 | Phase | Focus | Rough effort |
-|-------|-------|------|
+| ----- | ----- | ------------ |
 | 0 | Foundation | 2–3 days |
 | 1 | Design system | 3–5 days |
 | 2 | Slice 1 (catalog browse) | 3–5 days |
@@ -379,33 +390,39 @@ Park these in a backlog; don't let them grow v1.
 | 4 | Slice 3 (full commerce) | 8–12 days |
 | 5 | Hardening | 3–5 days |
 
-**Phase 0 — Foundation**
+### Phase 0 — Foundation
+
 - Scaffold app (Next.js App Router + TS + Tailwind 4).
 - Tooling: ESLint, Prettier, husky, CI workflow.
 - Tailwind theme from Figma tokens; base layout (header, footer, prefooter).
 - DB chosen + connected; ORM + first migration.
 
-**Phase 1 — Design system**
+### Phase 1 — Design system
+
 - Build `blocks/*` + `buttons/*` + `inputs/*` components from Figma, responsive.
 - Stars, price-per, product-list-item, banners, category nav.
 
-**Phase 2 — Slice 1 (catalog browse)**
+### Phase 2 — Slice 1 (catalog browse)
+
 - Seed products/categories. Home, Store list, Product details, Privacy, error pages.
 
-**Phase 3 — Slice 2 (cart + auth)**
+### Phase 3 — Slice 2 (cart + auth)
+
 - Auth (sign up/in, account). Cart (persisted). Search/filter/pagination.
 
-**Phase 4 — Slice 3 (full commerce)**
+### Phase 4 — Slice 3 (full commerce)
+
 - Checkout + orders, reviews, admin CRUD + image upload, (payments).
 
-**Phase 5 — Hardening**
+### Phase 5 — Hardening
+
 - E2E tests, a11y pass, perf (Lighthouse/Core Web Vitals), SEO metadata, analytics.
 
 ---
 
 ## 8. Proposed repo structure (Option B)
 
-```
+```text
 homebuzz/
   app/                 # routes (home, store, product/[slug], cart, account, auth)
     (marketing)/       # home, privacy
@@ -441,7 +458,7 @@ NEXT_PUBLIC_SITE_URL=         # canonical URL for metadata/sitemap
 ## 9. Risks & mitigations
 
 | Risk | Mitigation |
-|------|------------|
+| ---- | ---------- |
 | Scope creep → never ship | Hard-cut at Slice 2 for v1; Slice 3 is a separate milestone |
 | Figma design only at 1920 for some frames | Define 375/768/1280/1920 rules per component in Phase 1; don't guess at build time |
 | Auth done wrong (the old app's biggest gap) | Use Auth.js/Clerk, not hand-rolled JWT; mutations behind middleware from day one |
