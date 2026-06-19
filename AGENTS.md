@@ -18,8 +18,8 @@
 ```bash
 npm run dev          # dev server on :3000
 npm run build        # production build
-npm test             # vitest unit tests (tests/unit/)
-npm run test:e2e     # playwright e2e (tests/e2e/)
+npm test             # vitest unit tests (tests/unit/) — see docs/TESTING.md
+npm run test:e2e     # playwright e2e (tests/e2e/)    — see docs/TESTING.md
 npm run lint         # eslint
 npm run db:migrate   # apply migrations (use this, not db:push in scripts)
                      # If this fails, stop and report the exact error; do not attempt db:push

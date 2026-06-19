@@ -1,6 +1,6 @@
 # Homebuzz — Rebuild Plan
 
-> **Historical document.** This plan was written on 2026-06-04, before the rebuild started. The decisions it proposed have all been made and the project is now built. Read it for context on *why* things are the way they are, not as a guide to what to do next. For current architecture see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md); for current status see the git log.
+> **Historical document.** This plan was written on 2026-06-04, before the rebuild started. The decisions it proposed have all been made and the project is now built. Read it for context on *why* things are the way they are, not as a guide to what to do next. For current architecture see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md); for conceptual explanations of patterns see [CONCEPTS.md](CONCEPTS.md); for end-to-end flow traces see [WALKTHROUGH.md](WALKTHROUGH.md); for current status see the git log.
 
 A from-scratch rebuild of **Homebuzz**, a home-improvement / hardware e-commerce store
 (Home Depot–style). This document captures what existed at the time, the Figma design, and a
