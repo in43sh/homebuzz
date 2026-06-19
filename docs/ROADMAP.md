@@ -45,6 +45,7 @@ Also shipped alongside slices: Vitest unit tests, Playwright E2E, stock enforcem
 - [ ] **Search improvements** — current `ILIKE` is good enough for dev; `pg_trgm` or full-text index for production scale
 - [ ] **Related products ("You Might Also Need")** — PDP section exists in Figma but not implemented; simple category-based query is enough for v1
 - [ ] **Storybook** — design-system components are not documented in isolation
+- [ ] **Docker / local Postgres** — a `docker-compose.yml` running Postgres locally so contributors don't need a Neon account to develop. **Pros:** zero external dependencies for local dev, faster onboarding, works offline, no Neon free-tier limits during heavy seeding/testing. **Cons:** irrelevant for production (Vercel + Neon need no container); adds a Docker Desktop requirement; contributors still need `.env.local` wired correctly; local Postgres lacks Neon-specific features (branching, serverless scale-to-zero). Worth it if contributor onboarding becomes a pain point; not urgent while the team is small.
 
 ### Explicitly out of scope (park, don't build)
 
