@@ -47,6 +47,36 @@ Also shipped alongside slices: Vitest unit tests, Playwright E2E, stock enforcem
 - [ ] **Storybook** — design-system components are not documented in isolation
 - [ ] **Docker / local Postgres** — a `docker-compose.yml` running Postgres locally so contributors don't need a Neon account to develop. **Pros:** zero external dependencies for local dev, faster onboarding, works offline, no Neon free-tier limits during heavy seeding/testing. **Cons:** irrelevant for production (Vercel + Neon need no container); adds a Docker Desktop requirement; contributors still need `.env.local` wired correctly; local Postgres lacks Neon-specific features (branching, serverless scale-to-zero). Worth it if contributor onboarding becomes a pain point; not urgent while the team is small.
 
+### Future experiments (learning)
+
+This is a learning project. Once the production milestone is done, good candidates for rebuilding parts of the stack to explore different paradigms:
+
+#### Backend / API
+
+| Option | Why try it |
+| ------ | ---------- |
+| **Go + Chi + sqlc** | You have a Go backend in the old repo as a reference; sqlc generates type-safe DB code from raw SQL — very different from Drizzle's ORM approach |
+| **Rust + Axum** | Steepest curve; forces deep thinking about types and ownership; most transferable systems knowledge |
+| **Python + FastAPI** | Easiest pivot from JS; natural fit if ML/recommendations are ever added |
+
+#### Frontend
+
+| Option | Why try it |
+| ------ | ---------- |
+| **SvelteKit** | Least boilerplate in the JS ecosystem; reactivity without a virtual DOM; very different mental model from React |
+| **Remix** | Similar to Next.js App Router but more explicit about loaders/actions; good for understanding what Next.js abstracts away |
+| **Astro** | Islands architecture — teaches you to default to zero JS and add interactivity only where needed; natural fit for a catalog-heavy storefront |
+
+#### Full-stack paradigm shifts
+
+| Option | Why try it |
+| ------ | ---------- |
+| **Rails** | Convention-over-configuration taken to its logical extreme; shows you what Next.js and Drizzle borrowed; builds a working store in a day |
+| **Laravel + Livewire** | Same idea as Rails but PHP; enormous ecosystem; Livewire delivers reactivity without writing a separate frontend |
+| **Elixir + Phoenix LiveView** | Teaches concurrency and real-time (channels) without a separate WebSocket service; very different execution model |
+
+**Suggested order:** Go API rewrite first (head start from the old repo), then SvelteKit for the frontend. Two different paradigms, both practical, covers compiled-typed-backend + lightweight-reactive-frontend.
+
 ### Explicitly out of scope (park, don't build)
 
 Wishlists · multi-currency / i18n · promo/coupon codes · inventory reservation · shipping-rate calc & tax service · product Q&A · recommendations engine · CMS for banners/tutorials · mobile app.
