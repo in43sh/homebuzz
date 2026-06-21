@@ -1,6 +1,6 @@
 # Homebuzz — Walkthroughs
 
-Narrative traces of features end-to-end. Use these to see how the layers connect in practice. Flows match the entries in `docs/system-graph/data.json`.
+Narrative traces of features end-to-end. Use these to see how the layers connect in practice. Flows match the entries in [system-graph/data.json](system-graph/data.json). For pattern explanations, see [CONCEPTS.md](CONCEPTS.md). For implementation details and API tables, see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md).
 
 ---
 
@@ -106,6 +106,8 @@ Browser
             └─ redirect /account/orders/:id
 ```
 
+> **Related:** [CONCEPTS.md — The data model](CONCEPTS.md#why-cart_items-and-order_items-both-store-unit_price) — why both `cart_items` and `order_items` snapshot the price. [TECHNICAL_GUIDE.md §6.4](TECHNICAL_GUIDE.md#64-orders--checkout) — stock enforcement, `OutOfStockError`, and the no-payment stub.
+
 ---
 
 ## Browse / search catalog
@@ -168,6 +170,8 @@ Browser
             └─ Product[]
        └─ ProductGrid → rendered HTML → browser
 ```
+
+> **Related:** [CONCEPTS.md — RSC payloads](CONCEPTS.md#rsc-payloads-and-minimal-client-js) — why the page is server-rendered with no client-side fetch. [CONCEPTS.md — Drizzle ORM](CONCEPTS.md#drizzle-orm) — how `ilike` and the query builder map to SQL. [TECHNICAL_GUIDE.md §6.6](TECHNICAL_GUIDE.md#66-catalog-queries) — `getProducts`, `getRelatedProducts`, and DB-driven categories.
 
 ---
 
@@ -293,6 +297,8 @@ Browser
                  └─ Header re-renders → getCart() → updated count
 ```
 
+> **Related:** [CONCEPTS.md — Server Actions](CONCEPTS.md#server-actions) — how `addToCartAction` crosses the network invisibly. [CONCEPTS.md — The data model](CONCEPTS.md#upsert--insert-or-update-in-one-operation) — the upsert pattern for cart items. [TECHNICAL_GUIDE.md §6.2](TECHNICAL_GUIDE.md#62-cart-guest--user-with-merge) — `resolveCartId`, guest cookies, and merge behavior.
+
 ---
 
 ## Sign up
@@ -339,6 +345,8 @@ Browser
        └─ { ok: true }
        └─ signIn("credentials", …)  [hands off to sign-in + merge flow]
 ```
+
+> **Related:** [CONCEPTS.md — Auth.js](CONCEPTS.md#authjs-nextauth-v5--credential-based-sessions) — the Credentials provider, bcrypt, and why signup is not an Auth.js feature. [TECHNICAL_GUIDE.md §13](TECHNICAL_GUIDE.md#13-security-model) — the signup race condition and unique-index backstop.
 
 ---
 
@@ -398,6 +406,8 @@ Browser
                  └─ fold guest cart_items → user cart, drop guest cart + cookie
        └─ router.push("/account")
 ```
+
+> **Related:** [CONCEPTS.md — Auth.js](CONCEPTS.md#jwt-session-strategy--what-gets-stored-where) — how `id` and `role` flow through the JWT callbacks into the session. [TECHNICAL_GUIDE.md §15](TECHNICAL_GUIDE.md#15-gotchas) — why cart merge is client-triggered (not an Auth.js callback) and why `signIn` is deliberately client-side.
 
 ---
 
@@ -487,6 +497,8 @@ Browser
                  └─ product page re-renders with new review + rating
 ```
 
+> **Related:** [CONCEPTS.md — The data model](CONCEPTS.md#upsert--insert-or-update-in-one-operation) — the upsert pattern for reviews. [CONCEPTS.md — The `{ ok, reason }` pattern](CONCEPTS.md#the--ok-reason--result-pattern) — how `upsertReview` returns typed business failures. [TECHNICAL_GUIDE.md §6.3](TECHNICAL_GUIDE.md#63-reviews) — the purchase gate (`hasPurchased`), denormalized rating recompute, and `canReview`.
+
 ---
 
 ## Admin saves a product
@@ -561,6 +573,8 @@ Browser
             └─ redirect /admin/products
 ```
 
+> **Related:** [CONCEPTS.md — Auth.js](CONCEPTS.md#route-guarding--no-middleware) — how `isAdmin()` guards every admin surface without middleware. [TECHNICAL_GUIDE.md §6.5](TECHNICAL_GUIDE.md#65-admin-product-management) — slug uniqueness, `revalidateCatalog`, and the FK-blocked delete behavior.
+
 ---
 
 ## Seed the database
@@ -623,3 +637,5 @@ Developer
        └─ INSERT products (from lib/mock-products.ts, categoryId resolved by slug)
        └─ process.exit(0)
 ```
+
+> **Related:** [CONCEPTS.md — The data model](CONCEPTS.md#the-key-relationships-explained) — FK relationships and `ON DELETE` behavior that dictates the delete order. [TECHNICAL_GUIDE.md §10](TECHNICAL_GUIDE.md#10-local-development) — setup steps and seeded logins. [§15](TECHNICAL_GUIDE.md#15-gotchas) — why reseeding wipes order history (restrict FKs require deletion in child-first order).

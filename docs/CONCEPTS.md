@@ -1,6 +1,6 @@
 # Homebuzz — Concepts
 
-Explanations of unfamiliar patterns, anchored to how this project actually uses them.
+Explanations of unfamiliar patterns, anchored to how this project actually uses them. For implementation details, column definitions, and env var reference, see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md). For annotated end-to-end traces of each feature, see [WALKTHROUGH.md](WALKTHROUGH.md).
 
 Read in order — each section builds on the previous one.
 
@@ -10,7 +10,7 @@ Read in order — each section builds on the previous one.
 
 ## Architecture — what each block is and why it exists
 
-The architecture diagram in [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md) shows several boxes connected by arrows. The three yellow groupings are **not separate servers** — they're just code locations inside one Next.js process. The question the diagram answers is: who is allowed to talk to the database?
+The architecture diagram in [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md) shows several boxes connected by arrows. For an interactive version with clickable nodes and animated flows, open [system-graph/index.html](system-graph/index.html) in a browser. The three yellow groupings are **not separate servers** — they're just code locations inside one Next.js process. The question the diagram answers is: who is allowed to talk to the database?
 
 ### The blocks
 
@@ -44,6 +44,8 @@ db/index.ts                  →  the connection itself
 ```
 
 Keeping query logic in `lib/` (rather than inline in actions or pages) means both reads and writes share the same code without duplication, and the logic can be tested without going through HTTP.
+
+> **Related:** [TECHNICAL_GUIDE.md §2](TECHNICAL_GUIDE.md#2-architecture) — the architecture diagram and a representative end-to-end flow (guest adds item → signs in → checks out). [§3](TECHNICAL_GUIDE.md#3-repository-structure) — full repo tree with every file.
 
 ---
 
@@ -112,6 +114,8 @@ It's two lines because Auth.js does all the work — this file just mounts it on
 
 The only route that exists is the one that has to — because Auth.js requires stable, publicly addressable URLs. Everything else uses Server Actions, which have no URLs you ever need to know or maintain.
 
+> **Related:** [TECHNICAL_GUIDE.md §7](TECHNICAL_GUIDE.md#7-api-reference) — complete table of all Server Actions (file, access level, purpose).
+
 ---
 
 ## Part 2 — The Data Layer
@@ -151,6 +155,8 @@ DATABASE_URL_UNPOOLED=postgresql://...@ep-xxx.neon.tech/neondb  ← migrations u
 ```
 
 The key difference is `-pooler` in the hostname. If you accidentally use the pooled URL for migrations, Drizzle will fail with a prepared-statement error. If you use the direct URL for the app, you may hit Postgres connection limits under load.
+
+> **Related:** [TECHNICAL_GUIDE.md §11](TECHNICAL_GUIDE.md#11-environment-variables) — all env vars (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AUTH_SECRET`). [§15](TECHNICAL_GUIDE.md#15-gotchas) — the prepared-statement and `.env.local` gotchas.
 
 ---
 
@@ -229,6 +235,8 @@ The project uses two different Postgres URLs (see [db/index.ts](db/index.ts) and
 | `DATABASE_URL` (pooled)          | App queries at runtime            | Goes through Neon's PgBouncer connection pool |
 | `DATABASE_URL_UNPOOLED` (direct) | Migrations (`npm run db:migrate`) | PgBouncer doesn't support DDL statements      |
 
+> **Related:** [TECHNICAL_GUIDE.md §14](TECHNICAL_GUIDE.md#14-key-patterns) — the `numeric`-as-string convention and the two-connection pattern.
+
 ---
 
 ## The data model — reading the ER diagram
@@ -297,6 +305,8 @@ In this project it comes up in two places:
 **Submitting a review** — you can only have one review per product. `upsertReview` in [lib/reviews.ts](lib/reviews.ts) does the same pattern: look up an existing `reviews` row for this `(product_id, user_id)` pair, update it if found, insert if not.
 
 Both are implemented as a lookup + conditional write rather than a single SQL `INSERT ... ON CONFLICT DO UPDATE` — same concept, just written in application code.
+
+> **Related:** [TECHNICAL_GUIDE.md §5](TECHNICAL_GUIDE.md#5-data-architecture) — full column definitions for every table, ER diagram, and order status lifecycle. [WALKTHROUGH.md — Seed the database](WALKTHROUGH.md#seed-the-database) — FK-safe delete order when reseeding.
 
 ### Why `cart_items` and `order_items` both store `unit_price`
 
@@ -395,6 +405,8 @@ In a traditional React SPA, the entire component tree including all data-fetchin
 | `AuthForm` | Client | Yes |
 
 The "minimal" refers to only these interactive leaves sending code to the browser — not the pages, layouts, or data-fetching logic that wraps them.
+
+> **Related:** [TECHNICAL_GUIDE.md §8](TECHNICAL_GUIDE.md#8-frontend) — full route table with every page, its file, and notable behavior.
 
 ---
 
@@ -547,6 +559,8 @@ lib/cart.ts                  ← the real logic: DB queries, cookie handling
 
 This keeps the domain logic testable in isolation and makes actions easy to read.
 
+> **Related:** [TECHNICAL_GUIDE.md §14](TECHNICAL_GUIDE.md#14-key-patterns) — the "Server Actions for all writes; Server Components for all reads" pattern and targeted revalidation rules. [WALKTHROUGH.md](WALKTHROUGH.md) — annotated traces of checkout, add-to-cart, review, and admin save flows.
+
 ---
 
 ## Part 4 — Authentication
@@ -693,6 +707,8 @@ export async function isAdmin() {
 
 Every admin action and the admin layout both call `isAdmin()`. Account pages call `auth()` directly and redirect to `/signin` if the result is null. There's no single central gatekeeping point — each protected surface checks itself.
 
+> **Related:** [TECHNICAL_GUIDE.md §6.1](TECHNICAL_GUIDE.md#61-authentication--authorization) — auth implementation details. [§13](TECHNICAL_GUIDE.md#13-security-model) — full security model (bcrypt, Zod re-validation, SQL injection prevention, purchase gating). [§15](TECHNICAL_GUIDE.md#15-gotchas) — the cart-merge-is-client-triggered gotcha and why `signIn` is deliberately client-side. [WALKTHROUGH.md — Sign in + merge guest cart](WALKTHROUGH.md#sign-in--merge-guest-cart) — end-to-end trace.
+
 ---
 
 ## Part 5 — Conventions
@@ -760,3 +776,5 @@ if (!result.ok) {
 ```
 
 Nothing about this requires a `try/catch` on the client — the action itself is the only thing that can be in an error state, and it surfaces that cleanly through the return value.
+
+> **Related:** [TECHNICAL_GUIDE.md §15](TECHNICAL_GUIDE.md#15-gotchas) — how `deleteProductAction` catches the FK violation (`23503`) and returns `{ ok: false }` instead of crashing.
