@@ -1,0 +1,16 @@
+# Secrets — never send to the model
+.env
+.env.*
+
+# Heavy / regenerable — skip for speed + cost
+node_modules/
+.next/
+out/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.vercel/
+
+# graphify's own output
+graphify-out/
