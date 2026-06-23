@@ -20,11 +20,15 @@
   **inert until `graphify-out/graph.json` exists**.
 - ✅ **Phase 4** — `.graphifyignore` created (secrets + heavy dirs); `/graphify-out/` added to
   `.gitignore`.
-- ⏳ **Phase 2 (build) — BLOCKED ON RESTART.** Correction: there is **no `graphify .` CLI build
-  command**. The graph is built by the **`/graphify` skill** (in-IDE, no API key — and no API keys
-  are set, so headless `graphify extract` is not an option). The skill + hooks were installed *this*
-  session, so Claude Code must be **restarted** to load them. After restart, run `/graphify .`.
-- ⏳ **Phase 5 / 6** — sync workflow + verification, pending the build.
+- ✅ **Phase 2 (build) — DONE** (after Claude Code restart loaded the skill). Built via the
+  `/graphify` skill (in-IDE, no API key). Note: interpreter auto-detect failed on the pipx `-E`
+  shebang; pointed it at `~/.local/pipx/venvs/graphifyy/bin/python` manually. Result: **396 nodes,
+  686 edges, 38 communities** (313 AST + 84 semantic from 14 docs + 15 images). 🔒 **Secret grep
+  CLEAN** (`AUTH_SECRET`/`postgres://`/`npg_`/test-pw — none present). Risk #1 resolved.
+- ✅ **Phase 6 — DONE.** PreToolUse hook **verified firing live** — it intercepted a `grep` and
+  injected the "run `graphify query` first" directive, negligible latency. Risk #5 resolved.
+- ⏳ **Phase 5** — sync: `graphify update .` documented in CLAUDE.md; optional `graphify hook install`
+  (git post-commit auto-rebuild) still offered.
 
 ---
 
