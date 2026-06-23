@@ -118,6 +118,38 @@ docs/images) is the `/graphify .` skill inside the AI assistant.
 
 ---
 
+## Troubleshooting
+
+### `command not found: graphify`
+
+The CLI is in `~/.local/bin`, which is on `PATH` in any **new** terminal. In an older shell, run:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### A full `/graphify` rebuild can't find the Python interpreter
+
+Only happens when you delete `graphify-out/` and rebuild from scratch via the `/graphify` skill. The
+skill auto-detects the interpreter from the `graphify` launcher's shebang, but our pipx install uses
+`#!/…/python -E` — the trailing `-E` flag trips the detection and it falls back to the system
+`python3` (3.9, which doesn't have graphify installed). Fix by pinning the real interpreter once:
+
+```bash
+mkdir -p graphify-out
+printf '%s' "$HOME/.local/pipx/venvs/graphifyy/bin/python" > graphify-out/.graphify_python
+```
+
+Then re-run the build. The day-to-day commands (`query`, `affected`, `explain`, `path`, `update`) are
+**not** affected — they call the `graphify` binary directly.
+
+### The graph looks stale / missing a recent change
+
+Run `graphify update .` (AST-only, free). A git post-commit hook also kicks off a background rebuild
+after each commit; check its log at `~/.cache/graphify-rebuild.log` if something looks off.
+
+---
+
 ## How this differs from `docs/system-graph/`
 
 Both visualize HomeBuzz, but they are different tools and **both are worth keeping**.
