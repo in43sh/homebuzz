@@ -27,8 +27,13 @@
   CLEAN** (`AUTH_SECRET`/`postgres://`/`npg_`/test-pw — none present). Risk #1 resolved.
 - ✅ **Phase 6 — DONE.** PreToolUse hook **verified firing live** — it intercepted a `grep` and
   injected the "run `graphify query` first" directive, negligible latency. Risk #5 resolved.
-- ⏳ **Phase 5** — sync: `graphify update .` documented in CLAUDE.md; optional `graphify hook install`
-  (git post-commit auto-rebuild) still offered.
+- ✅ **Phase 5 — DONE.** Sync documented (`graphify update .` in CLAUDE.md). `graphify hook install`
+  run: post-commit + post-checkout git hooks installed, with the correct pipx venv interpreter
+  embedded (sidesteps the `-E` shebang bug). Hooks are local-only (`.git/hooks/`, not committed).
+- ✅ **Phase 6 docs — DONE.** Usage guide at `docs/GRAPHIFY.md`.
+
+**All phases complete.** Graph is live, queryable, secret-clean; the always-on hook is verified; and
+the graph auto-rebuilds on commit.
 
 ---
 
