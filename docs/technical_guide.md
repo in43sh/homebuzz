@@ -2,7 +2,7 @@
 
 A self-contained reference for the Homebuzz codebase: architecture, data model, subsystems, operations, and the non-obvious decisions behind them. Read this before doing non-trivial work.
 
-**Companion docs:** [CONCEPTS.md](CONCEPTS.md) explains unfamiliar patterns anchored to how this project uses them — RSC, Server Actions, Auth.js sessions, Drizzle, and the data model. [WALKTHROUGH.md](WALKTHROUGH.md) traces each major feature end-to-end with annotated code excerpts. [ROADMAP.md](ROADMAP.md) tracks what's shipped and what comes next. Read this guide for the *what* and *why*; read those for the *how* and *how-it-connects*.
+**Companion docs:** [concepts.md](concepts.md) explains unfamiliar patterns anchored to how this project uses them — RSC, Server Actions, Auth.js sessions, Drizzle, and the data model. [walkthrough.md](walkthrough.md) traces each major feature end-to-end with annotated code excerpts. [roadmap.md](roadmap.md) tracks what's shipped and what comes next. Read this guide for the *what* and *why*; read those for the *how* and *how-it-connects*.
 
 > **Note on this version of Next.js.** Per `AGENTS.md`, this project pins **Next.js 16.2.7** and its conventions may differ from older docs. The canonical guides ship inside `node_modules/next/dist/docs/` — read the relevant one before writing framework code.
 
@@ -70,7 +70,7 @@ flowchart TD
   DB --> Neon
 ```
 
-> See [CONCEPTS.md](CONCEPTS.md) for a plain-English explanation of why each layer exists and what it can and cannot do.
+> See [concepts.md](concepts.md) for a plain-English explanation of why each layer exists and what it can and cannot do.
 
 ### 2.1 Representative end-to-end flow — "guest adds an item, signs in, checks out"
 
@@ -112,7 +112,7 @@ Numbered walkthrough:
 6. `mergeGuestCartIntoUser` folds the guest cart into the user's cart (summing shared products), deletes the guest cart, and clears the cookie.
 7. **Checkout.** [app/cart/page.tsx](app/cart/page.tsx)'s checkout button → `placeOrderAction` → `placeOrder` ([lib/orders.ts](lib/orders.ts)). In one transaction it decrements each line's `stock` (rejecting oversell), inserts an `orders` row with `status='paid'` and `total = subtotal × 1.08`, and inserts `order_items` (price snapshots); on commit it clears the cart and redirects to the order detail page (or back to `/cart?error=stock` if a line was short). See §6.4.
 
-> See [WALKTHROUGH.md](WALKTHROUGH.md) for annotated, step-by-step traces of each of these flows.
+> See [walkthrough.md](walkthrough.md) for annotated, step-by-step traces of each of these flows.
 
 ---
 
@@ -169,7 +169,7 @@ homebuzz/
 ├── tests/
 │   ├── unit/                     # Vitest: categories, utils, validation
 │   └── e2e/shop.spec.ts          # Playwright: browse/search/add-to-cart
-├── docs/PLAN_ORIGINAL.md                  # Rebuild rationale (3 legacy repos → this one)
+├── docs/plan_original.md                  # Rebuild rationale (3 legacy repos → this one)
 ├── SETUP.md                      # First-run setup steps
 ├── drizzle.config.ts             # Uses DATABASE_URL_UNPOOLED for migrations
 └── playwright.config.ts / vitest.config.ts
@@ -217,7 +217,7 @@ erDiagram
   orders ||--o{ order_items : contains
 ```
 
-> See [CONCEPTS.md](CONCEPTS.md) for a plain-English explanation of the tables, relationships, and key design decisions (price snapshots, denormalized ratings, upsert patterns).
+> See [concepts.md](concepts.md) for a plain-English explanation of the tables, relationships, and key design decisions (price snapshots, denormalized ratings, upsert patterns).
 
 ### 5.1 `categories`
 
@@ -322,7 +322,7 @@ pending ──(unused)──┐
   - Account/order pages call `auth()` and `redirect("/signin")` if no session.
 - **HTTP handler:** [app/api/auth/\[...nextauth\]/route.ts](app/api/auth/%5B...nextauth%5D/route.ts) just re-exports `handlers` from `auth.ts`.
 
-> See [WALKTHROUGH.md — Sign up](WALKTHROUGH.md) and [Sign in + merge guest cart](WALKTHROUGH.md) for end-to-end traces.
+> See [walkthrough.md — Sign up](walkthrough.md) and [Sign in + merge guest cart](walkthrough.md) for end-to-end traces.
 
 ### 6.2 Cart (guest + user, with merge)
 
@@ -333,13 +333,13 @@ Lives in [lib/cart.ts](lib/cart.ts); mutations exposed via [app/actions/cart.ts]
 - `mergeGuestCartIntoUser` folds the guest cart into the user cart on login, summing shared products, then deletes the guest cart and cookie. It is invoked **explicitly from the client** after `signIn` in [components/auth/AuthForm.tsx](components/auth/AuthForm.tsx) — it is not an Auth.js callback (see §15).
 - Every cart action calls `revalidatePath("/", "layout")` because the header cart count lives in the root layout.
 
-> See [WALKTHROUGH.md — Add to cart (guest)](WALKTHROUGH.md) for an end-to-end trace.
+> See [walkthrough.md — Add to cart (guest)](walkthrough.md) for an end-to-end trace.
 
 ### 6.3 Reviews
 
 [lib/reviews.ts](lib/reviews.ts) + [app/actions/reviews.ts](app/actions/reviews.ts). `upsertReview` is **purchase-gated**: it returns `{ ok: false, reason: "unauthenticated" | "not_purchased" }` unless the user has an `order_items` row (joined to their `orders`) for that product, via the `hasPurchased` helper. It then enforces one review per (product, user) **in code** (lookup-then-insert-or-update) and calls `recomputeProductRating` to recompute `products.rating_avg` / `rating_count` from the `reviews` table. The PDP revalidates after submit, and uses the exported `canReview(productId)` to decide whether to render `ReviewForm` or a "only customers who ordered this can review" notice.
 
-> See [WALKTHROUGH.md — Submit a review](WALKTHROUGH.md) for an end-to-end trace.
+> See [walkthrough.md — Submit a review](walkthrough.md) for an end-to-end trace.
 
 ### 6.4 Orders / Checkout
 
@@ -347,19 +347,19 @@ Lives in [lib/cart.ts](lib/cart.ts); mutations exposed via [app/actions/cart.ts]
 
 > **No real payment processing exists.** `placeOrder` marks orders paid unconditionally. Real payments (e.g. Stripe) + the accompanying webhooks/emails are planned future work (§17).
 >
-> See [WALKTHROUGH.md — Checkout](WALKTHROUGH.md) for an end-to-end trace including the stock-check transaction.
+> See [walkthrough.md — Checkout](walkthrough.md) for an end-to-end trace including the stock-check transaction.
 
 ### 6.5 Admin product management
 
 [lib/admin.ts](lib/admin.ts) (server-only) + [app/actions/admin.ts](app/actions/admin.ts). `isAdmin()` gates every operation. `createProduct`/`updateProduct` derive a unique slug via `uniqueSlug` (slugify the title; on collision append the last 5 digits of `Date.now()`). `saveProductAction` validates with `productSchema`, then `revalidateCatalog()` busts `/admin/products`, `/store`, and `/`. `deleteProductAction` catches the `order_items` FK violation and returns a friendly error for products that have been ordered (§15). There is no admin order or user management — products only.
 
-> See [WALKTHROUGH.md — Admin saves a product](WALKTHROUGH.md) for an end-to-end trace.
+> See [walkthrough.md — Admin saves a product](walkthrough.md) for an end-to-end trace.
 
 ### 6.6 Catalog queries
 
 [lib/products.ts](lib/products.ts) — the one `lib` module that is **not** `server-only` (so it can be reached from `generateStaticParams`). `getProducts({ category, q })` joins products↔categories, supports an `ilike` search over title+description, and orders `on_sale DESC, id`. `getRelatedProducts` picks random same-category products via `ORDER BY random()`. `getCategories()` returns the nav category list (`{ name, slug }`, insertion order) straight from the `categories` table — the `Header`, `MobileMenu`, `CategorySidebar`, and `/store/[category]` all source categories from it (DB-driven, not the static `lib/categories.ts` list, which now serves only the seed + `slugify`).
 
-> See [WALKTHROUGH.md — Browse / search catalog](WALKTHROUGH.md) for an end-to-end trace.
+> See [walkthrough.md — Browse / search catalog](walkthrough.md) for an end-to-end trace.
 
 ---
 
@@ -407,7 +407,7 @@ Navigation: persistent `Header`/`Footer` in the root layout; `MobileMenu` for sm
 
 ## 9. Testing
 
-> See [TESTING.md](TESTING.md) for how to run tests, how to add new ones, and a prioritised list of coverage gaps.
+> See [testing.md](testing.md) for how to run tests, how to add new ones, and a prioritised list of coverage gaps.
 
 | Level | Tool | Location | Count | Covers |
 | ------- | ------ | ---------- | ------- | -------- |
@@ -541,7 +541,7 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 | **Rating recompute** | `recomputeProductRating` — recalculates `products.rating_avg`/`rating_count` from `reviews` after each review write. |
 | **`server-only`** | The import marker on most `lib/*` modules that makes the build fail if they're pulled into client code. `lib/products.ts` deliberately omits it. |
 | **Pooled vs. direct URL** | `DATABASE_URL` (pooled, PgBouncer, app runtime) vs. `DATABASE_URL_UNPOOLED` (direct, migrations/DDL). |
-| **Slice 2 / Slice 3** | Scope phases from `docs/PLAN_ORIGINAL.md`: Slice 2 = catalog+cart+auth (v1); Slice 3 = checkout/orders/reviews/admin. |
+| **Slice 2 / Slice 3** | Scope phases from `docs/plan_original.md`: Slice 2 = catalog+cart+auth (v1); Slice 3 = checkout/orders/reviews/admin. |
 | **`unit`** | A product's pricing unit ("each", "gallon"), display-only. |
 
 ---

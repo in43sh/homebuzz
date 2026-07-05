@@ -86,4 +86,4 @@ This project pins a specific Next.js version and uses NextAuth v5 (beta), whose
 APIs differ from older releases. Before making code changes, read
 **[AGENTS.md](AGENTS.md)** — it documents the version-specific conventions, the
 two-database-URL setup (pooled app connection vs. direct migration connection),
-and other gotchas. Testing details live in [docs/TESTING.md](docs/TESTING.md).
+and other gotchas. Testing details live in [docs/testing.md](docs/testing.md).

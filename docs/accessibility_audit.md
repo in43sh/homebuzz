@@ -1,7 +1,7 @@
 # WCAG 2.1 AA Accessibility Audit
 
 **Date:** 2026-07-05
-**Scope:** Keyboard navigation, focus visibility, and color contrast (the "yellow-on-dark" concern from `docs/ROADMAP.md`).
+**Scope:** Keyboard navigation, focus visibility, and color contrast (the "yellow-on-dark" concern from `docs/roadmap.md`).
 **Method:** Static review of design tokens (`app/globals.css`), shared UI (`components/ui/`), navigation blocks (`components/blocks/`), and page-level usage. Contrast ratios computed per the WCAG 2.1 relative-luminance formula.
 
 ---
