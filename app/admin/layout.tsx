@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin";
+
+export const metadata: Metadata = {
+  title: { default: "Admin", template: "%s · Admin · Homebuzz" },
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({
   children,

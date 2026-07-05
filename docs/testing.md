@@ -100,7 +100,7 @@ The dev database must be seeded (`npm run db:seed`) before running E2E tests tha
 
 ---
 
-## Coverage gaps (from TECHNICAL_GUIDE.md §9)
+## Coverage gaps (from technical_guide.md §9)
 
 These paths exist in code but have zero test coverage. They're the highest-value targets for new tests — each one has caught a real bug or edge case during development:
 

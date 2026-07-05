@@ -30,7 +30,7 @@
 - ✅ **Phase 5 — DONE.** Sync documented (`graphify update .` in CLAUDE.md). `graphify hook install`
   run: post-commit + post-checkout git hooks installed, with the correct pipx venv interpreter
   embedded (sidesteps the `-E` shebang bug). Hooks are local-only (`.git/hooks/`, not committed).
-- ✅ **Phase 6 docs — DONE.** Usage guide at `docs/GRAPHIFY.md`.
+- ✅ **Phase 6 docs — DONE.** Usage guide at `docs/graphify.md`.
 
 **All phases complete.** Graph is live, queryable, secret-clean; the always-on hook is verified; and
 the graph auto-rebuilds on commit.

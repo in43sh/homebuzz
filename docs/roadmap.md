@@ -1,6 +1,6 @@
 # Homebuzz — Roadmap
 
-> **Living document.** Updated as work ships. For the original architecture decisions and scope rationale, see [PLAN_ORIGINAL.md](PLAN_ORIGINAL.md). For how the current system works, see [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md).
+> **Living document.** Updated as work ships. For the original architecture decisions and scope rationale, see [plan_original.md](plan_original.md). For how the current system works, see [technical_guide.md](technical_guide.md).
 
 ---
 
@@ -30,9 +30,9 @@ Also shipped alongside slices: Vitest unit tests, Playwright E2E, stock enforcem
 
 ### Quality / hardening
 
-- [ ] **Lighthouse audit** — target ≥ 90 perf / SEO / a11y; not yet measured
+- [x] **Lighthouse audit** — measured 2026-07-05 (desktop, prod build): all pages ≥ 96 across perf / a11y / best-practices / SEO. One remaining a11y issue: `text-gray-500` fails WCAG AA contrast on light backgrounds. See [lighthouse_audit.md](lighthouse_audit.md)
 - [ ] **WCAG 2.1 AA pass** — keyboard nav, focus styles, color-contrast check on yellow-on-dark
-- [ ] **SEO metadata** — per-page `<title>` / `<meta description>`, OpenGraph, `sitemap.xml`, JSON-LD `Product` schema on PDPs
+- [x] **SEO metadata** — per-page `<title>` / `<meta description>`, site-wide OpenGraph/Twitter + dynamic OG image, `sitemap.xml`, `robots.txt`, JSON-LD `Product` schema on PDPs (set `NEXT_PUBLIC_SITE_URL` in prod for absolute URLs)
 - [ ] **Rate limiting** — no rate limiting on auth or mutation endpoints
 - [ ] **Structured logging + request IDs** — currently relies on Next.js default console output
 

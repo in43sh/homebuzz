@@ -6,6 +6,11 @@ import { CategorySidebar } from "@/components/store/CategorySidebar";
 export const metadata: Metadata = {
   title: "Store",
   description: "Browse paint, tools, hardware and more.",
+  openGraph: {
+    title: "Store",
+    description: "Browse paint, tools, hardware and more.",
+    url: "/store",
+  },
 };
 
 export default async function StorePage({

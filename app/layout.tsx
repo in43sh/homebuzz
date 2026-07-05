@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/blocks/Header";
 import { Footer } from "@/components/blocks/Footer";
+import { siteUrl, siteName } from "@/lib/site";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -10,13 +11,30 @@ const inter = Inter({
   weight: ["400", "500", "700", "900"],
 });
 
+const title = {
+  default: "Homebuzz — Home improvement store",
+  template: "%s · Homebuzz",
+};
+const description =
+  "Homebuzz — paint, tools, hardware and everything for your home improvement projects.";
+
 export const metadata: Metadata = {
-  title: {
-    default: "Homebuzz — Home improvement store",
-    template: "%s · Homebuzz",
+  metadataBase: new URL(siteUrl),
+  title,
+  description,
+  openGraph: {
+    type: "website",
+    siteName,
+    title,
+    description,
+    url: "/",
+    locale: "en_US",
   },
-  description:
-    "Homebuzz — paint, tools, hardware and everything for your home improvement projects.",
+  // Only the card type is global; title/description/image fall back per-page
+  // to each route's openGraph (or title) values.
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({

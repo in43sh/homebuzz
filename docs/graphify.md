@@ -4,7 +4,7 @@ A queryable knowledge graph of this codebase lives in `graphify-out/`. Instead o
 you (and the AI assistant) can ask **relationship questions** — "what calls this", "what breaks if I
 change this", "trace this flow" — and get a scoped answer with source locations.
 
-- **What it is and how it was set up:** [GRAPHIFY_PLAN.md](GRAPHIFY_PLAN.md)
+- **What it is and how it was set up:** [graphify_plan.md](graphify_plan.md)
 - **How it differs from the hand-built [system-graph/](system-graph/):** see the comparison at the
   bottom of this doc.
 
