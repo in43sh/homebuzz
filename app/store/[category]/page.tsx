@@ -16,7 +16,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { category } = await params;
   const found = (await getCategories()).find((c) => c.slug === category);
-  return { title: found?.name ?? "Store" };
+  const title = found?.name ?? "Store";
+  const description = found
+    ? `Shop ${found.name} at Homebuzz.`
+    : "Browse paint, tools, hardware and more.";
+  return {
+    title,
+    description,
+    openGraph: { title, description, url: `/store/${category}` },
+  };
 }
 
 export default async function CategoryPage({

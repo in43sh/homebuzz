@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProduct, getRelatedProducts, getProducts } from "@/lib/products";
+import { absoluteUrl } from "@/lib/site";
 import { getReviews, canReview } from "@/lib/reviews";
 import { auth } from "@/auth";
 import { Stars } from "@/components/store/Stars";
@@ -25,7 +26,18 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) return { title: "Product not found" };
-  return { title: product.title, description: product.description };
+  return {
+    title: product.title,
+    description: product.description,
+    alternates: { canonical: `/product/${product.slug}` },
+    openGraph: {
+      type: "website",
+      title: product.title,
+      description: product.description,
+      url: `/product/${product.slug}`,
+      ...(product.image ? { images: [{ url: product.image }] } : {}),
+    },
+  };
 }
 
 export default async function ProductPage({
@@ -44,8 +56,45 @@ export default async function ProductPage({
     canReview(Number(product.id)),
   ]);
 
+  const productImage = product.image
+    ? product.image.startsWith("http")
+      ? product.image
+      : absoluteUrl(product.image)
+    : undefined;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    description: product.description,
+    ...(productImage ? { image: productImage } : {}),
+    sku: product.id,
+    offers: {
+      "@type": "Offer",
+      price: product.price.toFixed(2),
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: absoluteUrl(`/product/${product.slug}`),
+    },
+    ...(product.ratingCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.rating,
+            reviewCount: product.ratingCount,
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <div className="grid gap-10 md:grid-cols-2">
         {/* Image */}
         <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-200">
