@@ -1,8 +1,8 @@
 # WCAG 2.1 AA Accessibility Audit
 
-**Date:** 2026-07-05
-**Scope:** Keyboard navigation, focus visibility, and color contrast (the "yellow-on-dark" concern from `docs/roadmap.md`).
-**Method:** Static review of design tokens (`app/globals.css`), shared UI (`components/ui/`), navigation blocks (`components/blocks/`), and page-level usage. Contrast ratios computed per the WCAG 2.1 relative-luminance formula.
+- **Date:** 2026-07-05
+- **Scope:** Keyboard navigation, focus visibility, and color contrast (the "yellow-on-dark" concern from `docs/roadmap.md`).
+- **Method:** Static review of design tokens (`app/globals.css`), shared UI (`components/ui/`), navigation blocks (`components/blocks/`), and page-level usage. Contrast ratios computed per the WCAG 2.1 relative-luminance formula.
 
 ---
 
@@ -23,7 +23,7 @@ Priority order to fix: **P1** contrast of `gray-500` → **P1** restore focus ou
 ### Token luminance reference
 
 | Token | Hex | Rel. luminance |
-|---|---|---|
+| --- | --- | --- |
 | `brand` (yellow) | `#ffce3a` | 0.657 |
 | `white` | `#ffffff` | 1.000 |
 | `gray-200` | `#cfd7dc` | 0.670 |
@@ -34,7 +34,7 @@ Priority order to fix: **P1** contrast of `gray-500` → **P1** restore focus ou
 ### Results
 
 | Foreground | Background | Ratio | Normal text (4.5) | Large text (3.0) | Where |
-|---|---|---:|:---:|:---:|---|
+| --- | --- | ---: | :---: | :---: | --- |
 | `brand` | `ink-900` | **11.3:1** | ✅ AAA | ✅ | Category strip labels, footer wordmark |
 | `brand` | `slate-700` | **7.7:1** | ✅ AAA | ✅ | Header wordmark, hover states, promo banner |
 | `white` | `slate-700` | **11.4:1** | ✅ AAA | ✅ | Header text |
@@ -44,7 +44,7 @@ Priority order to fix: **P1** contrast of `gray-500` → **P1** restore focus ou
 | **`gray-500`** | **`white`** | **3.25:1** | ❌ **FAIL** | ✅ (only if large) | **See below — widespread** |
 | `gray-500` placeholder | `white` | 3.25:1 | ⚠️ advisory | — | Search & form inputs |
 
-#### ❌ P1 — `gray-500` muted text on white fails AA (1.4.3 Contrast Minimum)
+### ❌ P1 — `gray-500` muted text on white fails AA (1.4.3 Contrast Minimum)
 
 `text-gray-500` on the default white background yields **3.25:1**. It passes only for *large* text (≥ 24px, or ≥ 18.66px bold). Most usages are `text-sm` / `text-xs` and are therefore **non-conformant**. Representative occurrences (grep `text-gray-500`):
 
@@ -65,7 +65,7 @@ Priority order to fix: **P1** contrast of `gray-500` → **P1** restore focus ou
 
 ## 2. Focus visibility (2.4.7 Focus Visible, 1.4.11 Non-text Contrast)
 
-#### ❌ P1 — Search inputs remove the focus indicator entirely
+### ❌ P1 — Search inputs remove the focus indicator entirely
 
 Both search fields strip the outline with no replacement:
 
@@ -74,7 +74,7 @@ Both search fields strip the outline with no replacement:
 
 A keyboard user tabbing to the search box gets **no visible focus**. **Fix:** add a visible focus style, e.g. `focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset` (inset works well since the field sits on a dark header) or a `focus-visible:border-brand` on a bordered field.
 
-#### ❌ P2 — Yellow focus ring is too low-contrast on light backgrounds
+### ❌ P2 — Yellow focus ring is too low-contrast on light backgrounds
 
 Shared components signal focus with the brand yellow ring:
 
@@ -84,6 +84,7 @@ Shared components signal focus with the brand yellow ring:
 Brand yellow vs. white page = **1.49:1**, and the `/40` variant is lower still. WCAG **1.4.11** requires a **3:1** focus indicator against adjacent colors. On dark surfaces the ring is fine; on the many white pages it is effectively invisible.
 
 **Fix options:**
+
 - Use a darker ring on light surfaces (`focus-visible:ring-ink-900`, ~contrast to white is very high), or
 - Add a dark ring-offset/second ring so the *edge* meeting white has ≥3:1, or
 - Keep brand but pair it with a solid `ring-offset-color` and an outer `ring-ink-900`.
@@ -95,7 +96,8 @@ Also note `ring-offset-2` has **no `ring-offset-color` set**, so it defaults to 
 
 ## 3. Keyboard navigation
 
-#### ✅ Working well
+### ✅ Working well
+
 - All interactive elements are real semantic controls — no `div`/`span` click handlers acting as buttons (verified: zero `onClick` on non-interactive elements).
 - Hamburger is a `<button>` with `aria-label="Open menu"` and `aria-expanded` (`MobileMenu.tsx:24-27`).
 - Drawer backdrop is a focusable `<button aria-label="Close menu">`, and **Escape closes the drawer** (`MobileMenu.tsx:13`).
@@ -103,9 +105,10 @@ Also note `ring-offset-2` has **no `ring-offset-color` set**, so it defaults to 
 - A `<main>` landmark exists (`app/layout.tsx:49`); nav regions are labeled (`aria-label="Categories"`, footer column labels).
 - `Stars` provides an `sr-only` text alternative for the rating (`components/store/Stars.tsx:38`).
 
-#### ⚠️ P2 — Mobile drawer lacks focus management (2.4.3 Focus Order, 4.1.2)
+### ⚠️ P2 — Mobile drawer lacks focus management (2.4.3 Focus Order, 4.1.2)
 
 `components/blocks/MobileMenu.tsx` opens a drawer but:
+
 1. **Focus is not moved into the drawer** when it opens — keyboard focus stays on the (now hidden-behind-overlay) trigger.
 2. **No focus trap** — Tab can leave the drawer and land on page content behind the backdrop.
 3. **Focus is not restored** to the hamburger button on close.
@@ -113,11 +116,11 @@ Also note `ring-offset-2` has **no `ring-offset-color` set**, so it defaults to 
 
 **Fix:** on open, move focus to the close button (or first focusable); trap Tab within the drawer; on close, return focus to the trigger; add `role="dialog" aria-modal="true" aria-label="Menu"`. A small `useEffect` or a headless dialog primitive covers all four.
 
-#### ⚠️ P2 — No skip-to-content link (2.4.1 Bypass Blocks, Level A)
+### ⚠️ P2 — No skip-to-content link (2.4.1 Bypass Blocks, Level A)
 
 The header renders a search form + full category strip before `<main>`. Keyboard users must tab through all of it on every page. **Fix:** add a visually-hidden-until-focused skip link as the first child of `<body>` in `app/layout.tsx`, targeting `<main id="main-content">`.
 
-#### ⚠️ P3 — Duplicate control label
+### ⚠️ P3 — Duplicate control label
 
 The backdrop button and the X button both use `aria-label="Close menu"` (`MobileMenu.tsx:45,61`). Harmless but consider `aria-label="Close menu overlay"` on the backdrop to disambiguate for screen-reader users navigating by controls.
 
@@ -126,7 +129,7 @@ The backdrop button and the X button both use `aria-label="Close menu"` (`Mobile
 ## 4. Summary table
 
 | # | Finding | WCAG | Level | Priority | Location |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | 1 | `gray-500` muted text on white = 3.25:1 | 1.4.3 | AA | **P1** | `globals.css` token; site-wide |
 | 2 | Search inputs remove focus outline | 2.4.7 | AA | **P1** | `Header.tsx:32`, `MobileMenu.tsx:82` |
 | 3 | Yellow focus ring < 3:1 on white | 1.4.11 | AA | **P2** | `Button.tsx:8`, `Input.tsx:10` |
