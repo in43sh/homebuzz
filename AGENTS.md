@@ -47,6 +47,10 @@ tests/unit/      # Vitest tests
 tests/e2e/       # Playwright tests
 ```
 
+## Project Docs
+
+- Backlog: @docs/backlog.md
+
 ## Environment
 
 Env file must be `.env.local` (not `.env`). Three required vars:
