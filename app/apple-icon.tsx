@@ -1,0 +1,32 @@
+import { ImageResponse } from "next/og";
+
+// Home-screen icon for iOS. Same "B" mark as app/icon.svg, but full-bleed
+// (no rounded corners) because iOS applies its own mask.
+export const size = { width: 180, height: 180 };
+export const contentType = "image/png";
+
+export default function AppleIcon() {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#ffce3a",
+        }}
+      >
+        <svg width="150" height="150" viewBox="0 0 32 32">
+          <path
+            fill="#1b1e1f"
+            fillRule="evenodd"
+            d="M9 6h9.5c4 0 6 2 6 5 0 2-1 3.4-2.7 4.2 2.2.7 3.7 2.4 3.7 5 0 3.6-2.5 5.8-6.7 5.8H9Zm4.5 3.6V14H18c1.5 0 2.3-.8 2.3-2.2S19.5 9.6 18 9.6Zm0 7.8v5h4.9c1.7 0 2.7-.9 2.7-2.5s-1-2.5-2.7-2.5Z"
+          />
+        </svg>
+      </div>
+    ),
+    size,
+  );
+}
