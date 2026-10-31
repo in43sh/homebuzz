@@ -10,14 +10,19 @@ Research run on 2026-10-31 from [naming_research_prompt.md](naming_research_prom
 | Portfolio demo or real business? | Portfolio demo only |
 | Social handles | None needed, so handle checks were skipped |
 | Domains | `.com`, `.shop`, or `.store` preferred; a missing domain should not rule out a really good name |
-| Names or styles already liked or ruled out | No answer; default (none) used |
+| Names or styles already liked or ruled out | No two-word "X & Y" names (stated after the first run). Owner suggested **Base Hardware** |
 
 Because the owner said a missing domain is acceptable, domain availability was moved from a hard requirement to a scored criterion with a low weight. Handles were dropped from scoring.
 
+## Decision
+
+On 2026-10-31 the owner chose **Base Hardware**, with the domain **`basehardware.store`** (rechecked the same day: still unregistered). Still open before the rename: the say-it-once test and the manual trademark search in [Next steps](#next-steps), and registering the domain.
+
 ## Executive summary
 
-- **Recommended: Plumb & Post** (84/100, vs. 46 for Homebuzz). It fixes the owner's complaint directly: both words are trade terms ("plumb" means perfectly vertical and is the root of "plumbing"; a post is a structural upright), so it sounds sturdy rather than hyped. It is the only finalist with the exact `.com` free, and no business using the name was found.
+- **Recommended: Base Hardware** (80/100, vs. 46 for Homebuzz), suggested by the owner. It fixes the owner's complaint directly: "Base" is plain and solid, it can only be spelled one way, and no business using the name was found. The brand word is "Base"; "Hardware" is a descriptor, so it is not an "X & Y" name. Its one real risk is that it rhymes with Ace Hardware and follows the same "___ Hardware" pattern; run the say-it-once test in [Next steps](#next-steps) before committing. Its `.com` is taken; `.store` is free.
 - **Runner-up: Plankwell** (77/100). Short, solid, and unclaimed as a business name, but "plank" leans toward flooring and lumber, which is narrower than a store that also sells appliances, decor, and garden products. Its `.com` is taken.
+- **Excluded by preference: Plumb & Post** (84/100). It scored highest, but it is an "X & Y" name, which the owner ruled out after the first run.
 
 Trademark status is **unchecked** for every name (see [Screening results](#screening-results)). Run the manual USPTO search in [Next steps](#next-steps) before committing.
 
@@ -74,6 +79,7 @@ All checks were run on 2026-10-31.
 | Name | `.com` | `.shop` | `.store` | Existing business found | Result |
 | --- | --- | --- | --- | --- | --- |
 | Plumb & Post (`plumbandpost`) | Free | Free | Free | None ([search](https://mcaofiowa.org/about/blog/mcai-associate-and-affiliate-member-spotlight-plumb-supply-company/) found only the unrelated Plumb Supply Company) | **Pass** |
+| Base Hardware (`basehardware`, owner suggestion) | Taken | Unchecked (rate-limited) | Free | None found; the name echoes [Ace Hardware](https://en.wikipedia.com/wiki/ACE_Hardware) and [Home Hardware](https://wikipedia.com/wiki/Home_Hardware) | **Pass** (similarity risk scored under distinctiveness) |
 | Plankwell | Taken | Free | Free | None; nearest is [Plank Hardware](https://businessofhome.com/articles/plank-hardware-disrupts-the-hardware-sector-with-modern-sustainable-designs.html), a decorative-hardware brand | **Pass** |
 | Squarehouse | Taken | Free | Free | None exact; [SquareHome](https://village.ai/company/squarehome) (furniture) and [Square House](https://archipro.co.nz/projects/square-house-smith-construction) (NZ builder) are close | **Pass** |
 | Haldo | Taken | Free | Free | None ([search](https://trademarkdir.com/owner/healdo-inc) found only the unrelated Healdo Inc) | **Pass** |
@@ -88,30 +94,31 @@ All checks were run on 2026-10-31.
 
 ## Shortlist
 
-| Criterion (weight) | Plumb & Post | Plankwell | Squarehouse | Haldo | Homebuzz (baseline) |
-| --- | --- | --- | --- | --- | --- |
-| Style | Descriptive | Compound | Compound | Invented | Compound |
-| Tone (25) | 5 | 4 | 4 | 3 | 1 |
-| Distinctiveness (20) | 4 | 4 | 3 | 5 | 2 |
-| Category fit (20) | 4 | 3 | 3 | 2 | 2 |
-| Spellability (15) | 3 | 4 | 4 | 3 | 3 |
-| Brand fit (10) | 5 | 4 | 4 | 4 | 4 |
-| Length (5) | 3 | 5 | 3 | 5 | 5 |
-| Domain quality (5) | 5 | 4 | 4 | 4 | 3 |
-| **Total (/100)** | **84** | **77** | **71** | **69** | **46** |
-| Trademark screen | Unchecked | Unchecked | Unchecked | Unchecked | Unchecked |
+| Criterion (weight) | Base Hardware | Plankwell | Squarehouse | Haldo | Plumb & Post (excluded) | Homebuzz (baseline) |
+| --- | --- | --- | --- | --- | --- | --- |
+| Style | Name + descriptor | Compound | Compound | Invented | Descriptive pair | Compound |
+| Tone (25) | 5 | 4 | 4 | 3 | 5 | 1 |
+| Distinctiveness (20) | 2 | 4 | 3 | 5 | 4 | 2 |
+| Category fit (20) | 4 | 3 | 3 | 2 | 4 | 2 |
+| Spellability (15) | 5 | 4 | 4 | 3 | 3 | 3 |
+| Brand fit (10) | 5 | 4 | 4 | 4 | 5 | 4 |
+| Length (5) | 3 | 5 | 3 | 5 | 3 | 5 |
+| Domain quality (5) | 3 | 4 | 4 | 4 | 5 | 3 |
+| **Total (/100)** | **80** | **77** | **71** | **69** | **84** | **46** |
+| Trademark screen | Unchecked | Unchecked | Unchecked | Unchecked | Unchecked | Unchecked |
 
-Arithmetic, e.g. Plumb & Post: (25×5 + 20×4 + 20×4 + 15×3 + 10×5 + 5×3 + 5×5) ÷ 5 = 420 ÷ 5 = 84. Homebuzz: (25×1 + 20×2 + 20×2 + 15×3 + 10×4 + 5×5 + 5×3) ÷ 5 = 230 ÷ 5 = 46.
+Arithmetic, e.g. Base Hardware: (25×5 + 20×2 + 20×4 + 15×5 + 10×5 + 5×3 + 5×3) ÷ 5 = 400 ÷ 5 = 80. Plumb & Post: (25×5 + 20×4 + 20×4 + 15×3 + 10×5 + 5×3 + 5×5) ÷ 5 = 420 ÷ 5 = 84. Homebuzz: (25×1 + 20×2 + 20×2 + 15×3 + 10×4 + 5×5 + 5×3) ÷ 5 = 230 ÷ 5 = 46.
 
 Notes behind the scores:
 
+- **Base Hardware:** distinctiveness is 2 because it rhymes with Ace Hardware, a US chain with thousands of stores, and shares the "___ Hardware" pattern with Ace and Canada's Home Hardware; "Base" also appears in Homebase, a large UK home-improvement chain. Category fit is 4, not 5, because "Hardware" is narrower than a store that also sells bath, appliances, decor, and garden products, though hardware chains commonly sell all of these. It fits the identity well: a heavy `BASE` with a yellow `HARDWARE`, and "Base" alone for the favicon. Domain is 3 because only `.store` was confirmed free.
 - **Plumb & Post:** loses points on spelling because the "b" in "plumb" is silent (risk of "Plum & Post") and the ampersand may be written as "and". Category fit is 4, not 5, because the words lean toward construction more than decor or appliances. It works well as a two-word heavy wordmark with a yellow "&".
 - **Plankwell:** "plank" ties it to flooring and lumber; "-well" reads as craftsmanship but can drift toward wellness.
 - **Squarehouse:** "square" can mean old-fashioned in slang, a mild tone risk. It also reads a little like an architecture firm or a home builder.
 - **Haldo:** the most distinctive but says nothing about the store, so it would need a tagline ("Haldo, home improvement") everywhere.
 - **Homebuzz:** every check was run on it too. It passes the hard requirements; its low score comes from tone, distinctiveness, and category fit.
 
-All four finalists beat the baseline by more than 20 points.
+All five finalists beat the baseline by more than 20 points.
 
 ## Rejected names
 
@@ -161,13 +168,14 @@ No unit or e2e test asserts on the name, so tests should not break.
 ## Assumptions and open questions
 
 - **Local businesses as conflicts.** Homewright failed only because of small local remodeling firms. For a portfolio demo, the owner may accept that kind of overlap. If so, Homewright could return to the shortlist (its `.shop` and `.store` are free).
-- **Plumb & Post wordmark.** Should the yellow accent go on "&", "Post", or nothing? This is the one rename decision with a visual impact.
+- **Wordmark accent.** Which part of the new name gets the yellow accent (for Base Hardware, likely `HARDWARE`)? This is the one rename decision with a visual impact.
 - **Seed email domain.** Rename `homebuzz.test` along with the brand, or keep it to avoid reseeding?
 - **Second round.** Only 4 of 12 candidates survived screening. If none of the finalists appeals, a second round should explore more two-word trade-term pairs like Plumb & Post, since that pattern scored best.
 
 ## Next steps
 
-1. **Run the trademark search by hand** (about 5 minutes): at <https://tmsearch.uspto.gov>, search each finalist and look for live marks in classes 35 (retail), 2 (paint), 6 (metal hardware), 7 (power tools), 8 (hand tools), and 9 (electrical). Repeat at <https://branddb.wipo.int>.
-2. **Pick the name**, and decide the wordmark accent and the seed email question.
-3. **Register the domain** if wanted: `plumbandpost.com` was unregistered on 2026-10-31.
-4. **Do the rename** as one PR, using the [Rename impact](#rename-impact) table as the checklist, then run `npm test` and `npm run test:e2e`.
+1. **Say-it-once test for Base Hardware:** say the name aloud to two or three people without spelling it, and ask them to type it. If anyone hears "Ace Hardware", fall back to Plankwell.
+2. **Run the trademark search by hand** (about 5 minutes): at <https://tmsearch.uspto.gov>, search each finalist and look for live marks in classes 35 (retail), 2 (paint), 6 (metal hardware), 7 (power tools), 8 (hand tools), and 9 (electrical). For Base Hardware, also note how close live "Ace Hardware" marks are. Repeat at <https://branddb.wipo.int>.
+3. **Pick the name**, and decide the wordmark accent and the seed email question.
+4. **Register the domain** if wanted: `basehardware.store` was unregistered on 2026-10-31, and `basehardware.shop` still needs checking.
+5. **Do the rename** as one PR, using the [Rename impact](#rename-impact) table as the checklist, then run `npm test` and `npm run test:e2e`.
