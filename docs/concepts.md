@@ -1,4 +1,4 @@
-# Homebuzz — Concepts
+# Base Hardware — Concepts
 
 Explanations of unfamiliar patterns, anchored to how this project actually uses them. For implementation details, column definitions, and env var reference, see [technical_guide.md](technical_guide.md). For annotated end-to-end traces of each feature, see [walkthrough.md](walkthrough.md).
 
@@ -335,7 +335,7 @@ The result: the page appears with real content immediately, and the browser only
 
 ### How this project uses it
 
-In Homebuzz almost every component is a **Server Component** by default — no `"use client"` at the top, no `useState`, no `useEffect`. The home page is a good example:
+In Base Hardware almost every component is a **Server Component** by default — no `"use client"` at the top, no `useState`, no `useEffect`. The home page is a good example:
 
 ```tsx
 // app/page.tsx — Server Component (no "use client")

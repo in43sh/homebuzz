@@ -1,8 +1,9 @@
 import { ImageResponse } from "next/og";
+import { siteName } from "@/lib/site";
 
 // Branded default Open Graph image, applied site-wide (and reused for Twitter
 // cards) unless a route provides its own opengraph-image or openGraph.images.
-export const alt = "Homebuzz — Home improvement store";
+export const alt = `${siteName} — Home improvement store`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -31,7 +32,7 @@ export default function OpengraphImage() {
             color: "#ffce3a",
           }}
         >
-          Homebuzz
+          {siteName}
         </div>
         <div
           style={{

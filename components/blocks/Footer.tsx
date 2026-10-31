@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { siteName } from "@/lib/site";
 
 const columns = [
   {
@@ -31,7 +32,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 md:grid-cols-4">
         <div>
           <p className="text-xl font-black text-white">
-            home<span className="text-brand">buzz</span>
+            base<span className="text-brand">hardware</span>
           </p>
           <p className="mt-2 text-sm text-gray-500">
             Everything for your home improvement projects.
@@ -54,7 +55,7 @@ export function Footer() {
       </div>
       <div className="border-t border-slate-700">
         <p className="mx-auto max-w-7xl px-4 py-4 text-xs text-gray-500">
-          © {new Date().getFullYear()} Homebuzz. All rights reserved.
+          © {new Date().getFullYear()} {siteName}. All rights reserved.
         </p>
       </div>
     </footer>

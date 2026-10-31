@@ -12,11 +12,11 @@ const inter = Inter({
 });
 
 const title = {
-  default: "Homebuzz — Home improvement store",
-  template: "%s · Homebuzz",
+  default: `${siteName} — Home improvement store`,
+  template: `%s · ${siteName}`,
 };
 const description =
-  "Homebuzz — paint, tools, hardware and everything for your home improvement projects.";
+  `${siteName} — paint, tools, hardware and everything for your home improvement projects.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

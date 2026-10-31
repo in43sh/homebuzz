@@ -1,6 +1,6 @@
-# Homebuzz — Technical Guide
+# Base Hardware — Technical Guide
 
-A self-contained reference for the Homebuzz codebase: architecture, data model, subsystems, operations, and the non-obvious decisions behind them. Read this before doing non-trivial work.
+A self-contained reference for the Base Hardware codebase: architecture, data model, subsystems, operations, and the non-obvious decisions behind them. Read this before doing non-trivial work.
 
 **Companion docs:** [concepts.md](concepts.md) explains unfamiliar patterns anchored to how this project uses them — RSC, Server Actions, Auth.js sessions, Drizzle, and the data model. [walkthrough.md](walkthrough.md) traces each major feature end-to-end with annotated code excerpts. [roadmap.md](roadmap.md) tracks what's shipped and what comes next. Read this guide for the *what* and *why*; read those for the *how* and *how-it-connects*.
 

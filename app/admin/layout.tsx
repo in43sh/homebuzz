@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin";
+import { siteName } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { default: "Admin", template: "%s · Admin · Homebuzz" },
+  title: { default: "Admin", template: `%s · Admin · ${siteName}` },
   robots: { index: false, follow: false },
 };
 

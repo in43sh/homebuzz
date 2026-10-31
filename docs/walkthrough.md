@@ -1,4 +1,4 @@
-# Homebuzz — Walkthroughs
+# Base Hardware — Walkthroughs
 
 Narrative traces of features end-to-end. Use these to see how the layers connect in practice. Flows match the entries in [system-graph/data.json](system-graph/data.json). For pattern explanations, see [concepts.md](concepts.md). For implementation details and API tables, see [technical_guide.md](technical_guide.md).
 

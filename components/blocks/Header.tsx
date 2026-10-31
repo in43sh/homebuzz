@@ -16,7 +16,7 @@ export async function Header() {
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 md:gap-6">
         <MobileMenu categories={categories} />
         <Link href="/" className="text-2xl font-black tracking-tight">
-          home<span className="text-brand">buzz</span>
+          base<span className="text-brand">hardware</span>
         </Link>
 
         <form

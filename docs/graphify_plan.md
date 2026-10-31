@@ -1,7 +1,7 @@
 # Graphify Integration Plan
 
 > **Goal:** Install [Graphify](https://graphify.net/) and wire up its always-on Claude Code
-> integration for the HomeBuzz repo, so Claude consults a knowledge graph of the codebase
+> integration for the Base Hardware repo, so Claude consults a knowledge graph of the codebase
 > (app code + Drizzle schema + docs) before searching raw files.
 
 **Branch:** `feature/graphify`

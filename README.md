@@ -1,4 +1,4 @@
-# Homebuzz
+# Base Hardware
 
 _A full-stack Next.js e-commerce storefront — browse, cart, checkout, review._
 

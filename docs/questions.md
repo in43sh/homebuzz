@@ -1,4 +1,4 @@
-# Homebuzz — Questions
+# Base Hardware — Questions
 
 A running log of things that weren't clear, and what turned out to be the answer. Add a new entry whenever something clicks.
 

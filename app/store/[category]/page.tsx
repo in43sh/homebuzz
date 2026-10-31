@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getProducts, getCategories } from "@/lib/products";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { CategorySidebar } from "@/components/store/CategorySidebar";
+import { siteName } from "@/lib/site";
 
 export async function generateStaticParams() {
   const categories = await getCategories();
@@ -18,7 +19,7 @@ export async function generateMetadata({
   const found = (await getCategories()).find((c) => c.slug === category);
   const title = found?.name ?? "Store";
   const description = found
-    ? `Shop ${found.name} at Homebuzz.`
+    ? `Shop ${found.name} at ${siteName}.`
     : "Browse paint, tools, hardware and more.";
   return {
     title,

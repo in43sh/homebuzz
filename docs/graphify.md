@@ -1,4 +1,4 @@
-# Using Graphify on HomeBuzz
+# Using Graphify on Base Hardware
 
 A queryable knowledge graph of this codebase lives in `graphify-out/`. Instead of grepping,
 you (and the AI assistant) can ask **relationship questions** — "what calls this", "what breaks if I
@@ -152,7 +152,7 @@ after each commit; check its log at `~/.cache/graphify-rebuild.log` if something
 
 ## How this differs from `docs/system-graph/`
 
-Both visualize HomeBuzz, but they are different tools and **both are worth keeping**.
+Both visualize Base Hardware, but they are different tools and **both are worth keeping**.
 
 | | `docs/system-graph/` | graphify (`graphify-out/`) |
 | --- | --- | --- |

@@ -1,4 +1,4 @@
-# Homebuzz — Roadmap
+# Base Hardware — Roadmap
 
 > **Living document.** Updated as work ships. For the original architecture decisions and scope rationale, see [plan_original.md](plan_original.md). For how the current system works, see [technical_guide.md](technical_guide.md).
 

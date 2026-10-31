@@ -55,7 +55,7 @@ export function MobileMenu({ categories }: { categories: CategoryNav[] }) {
           >
             <div className="flex items-center justify-between border-b border-ink-900 px-4 py-4">
               <span className="text-xl font-black">
-                home<span className="text-brand">buzz</span>
+                base<span className="text-brand">hardware</span>
               </span>
               <button
                 aria-label="Close menu"

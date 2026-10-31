@@ -1,4 +1,4 @@
-# Homebuzz — Testing Guide
+# Base Hardware — Testing Guide
 
 How the test suite is structured, how to run it, and how to add to it.
 

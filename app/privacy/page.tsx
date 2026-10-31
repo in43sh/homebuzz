@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteName } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Privacy Policy" };
 
@@ -10,7 +11,7 @@ export default function PrivacyPage() {
       </h1>
       <div className="space-y-4 text-gray-500">
         <p>
-          Homebuzz respects your privacy. This placeholder page outlines how the
+          {siteName} respects your privacy. This placeholder page outlines how the
           store would collect, use and protect your information.
         </p>
         <p>
