@@ -1,9 +1,11 @@
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
-Before any code change, read the `next` version in `package.json`, then open the matching docs in `node_modules/next/dist/docs/` and follow the sections relevant to the change. Do not infer behavior from memory.
+Before changing Next.js code (routing, data fetching, caching, config, or Next APIs), read `node_modules/next/dist/docs/index.md`, then the section for the area you are changing: `01-app` for the App Router, `02-pages` for the Pages Router, `03-architecture` for internals. Do not infer behavior from memory. Styling and copy changes do not need this step.
 
-If `node_modules/next/dist/docs/` is missing, run `npm install`. If that fails, stop and report the exact error. If no docs match the `package.json` version, stop and report that the local docs are unavailable for that version.
+The docs ship inside the installed `next` package, so they match what is installed. Check that `node_modules/next/package.json` version matches `package.json`.
+
+If `node_modules/next/dist/docs/` is missing, run `npm install`. If that fails, stop and report the exact error. If the installed version does not match `package.json`, or no docs exist for it, stop and report that the local docs are unavailable for that version.
 
 APIs, conventions, and file structure may differ from your training data. Heed all deprecation notices in the docs.
 <!-- END:nextjs-agent-rules -->
