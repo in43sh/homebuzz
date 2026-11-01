@@ -31,7 +31,7 @@ Also shipped alongside slices: Vitest unit tests, Playwright E2E, stock enforcem
 ### Quality / hardening
 
 - [x] **Lighthouse audit** — measured 2026-07-05 (desktop, prod build): all pages ≥ 96 across perf / a11y / best-practices / SEO. One remaining a11y issue: `text-gray-500` fails WCAG AA contrast on light backgrounds. See [lighthouse_audit.md](audits/lighthouse_audit.md)
-- [ ] **WCAG 2.1 AA pass** — the five known findings are tracked in [backlog.md](backlog.md) (Milestone 2); the broader keyboard-only pass is part of the redesign research ([redesign_research_prompt.md](redesign_research_prompt.md))
+- [ ] **WCAG 2.1 AA pass** — the five known findings are fixed (Milestone 2, 2026-11-01); the broader keyboard-only pass is still part of the redesign research ([redesign_research_prompt.md](redesign_research_prompt.md))
 - [x] **SEO metadata** — per-page `<title>` / `<meta description>`, site-wide OpenGraph/Twitter + dynamic OG image, `sitemap.xml`, `robots.txt`, JSON-LD `Product` schema on PDPs (set `NEXT_PUBLIC_SITE_URL` in prod for absolute URLs)
 - [ ] **Rate limiting** — no rate limiting on auth or mutation endpoints
 - [ ] **Structured logging + request IDs** — currently relies on Next.js default console output
@@ -102,6 +102,8 @@ Done when: the site loads on `https://basehardware.store` and the sitemap and Op
 The five open findings from [accessibility_audit.md](audits/accessibility_audit.md), already written up as items in [backlog.md](backlog.md): muted-text contrast, search-input focus outlines, focus-ring contrast, mobile drawer focus management, and the skip-to-content link. Do these before the redesign research so the research spends its effort on new problems.
 
 Done when: the five backlog items are closed and the Lighthouse accessibility check no longer reports the muted-text contrast failure.
+
+Status: **done 2026-11-01.** All five are fixed, plus two related findings (placeholder contrast and the duplicate "Close menu" label). Three more contrast failures on the home page surfaced during verification and are fixed too (hero text on gray, and the delivery banner heading on yellow). axe-core (WCAG 2.0/2.1 A and AA) reports no violations on 9 pages, and a keyboard walkthrough confirmed the skip link, the search focus ring, and the drawer (focus moves in, Tab stays inside, Escape restores focus). Four pages still list one "needs review" item for text over images, which automated tools cannot measure. Lighthouse was not re-run.
 
 ### Milestone 3 — Checkout
 

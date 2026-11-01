@@ -68,7 +68,7 @@ export function ReviewForm({
           onChange={(e) => setBody(e.target.value)}
           rows={3}
           maxLength={1000}
-          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:border-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900"
           placeholder="What did you think?"
         />
       </label>

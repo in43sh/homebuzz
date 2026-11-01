@@ -8,7 +8,8 @@
   /* Brand + neutrals */
   --color-slate-700: #353b3e; /* primary dark surface */
   --color-ink-900: #1b1e1f; /* near-black text / footer */
-  --color-gray-500: #879095; /* muted text */
+  --color-gray-500: #6b7378; /* muted text on light surfaces (4.8:1 on white) */
+  --color-gray-400: #879095; /* muted text on dark surfaces (5.2:1 on ink-900) */
   --color-gray-200: #cfd7dc; /* borders / light surfaces */
   --color-brand: #ffce3a; /* yellow accent / CTA */
   --color-white: #ffffff;

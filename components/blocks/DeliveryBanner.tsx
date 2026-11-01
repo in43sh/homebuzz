@@ -4,7 +4,7 @@ export function DeliveryBanner() {
   return (
     <section className="overflow-hidden bg-brand">
       <div className="mx-auto flex max-w-7xl flex-col items-center px-4 py-12 text-center">
-        <h2 className="text-4xl font-black tracking-tight text-white md:text-display">
+        <h2 className="text-4xl font-black tracking-tight text-ink-900 md:text-display">
           WE DELIVER
         </h2>
         <Image

@@ -5,7 +5,7 @@ type Variant = "default" | "outline" | "warning";
 type Size = "regular" | "small";
 
 const base =
-  "inline-flex items-center justify-center rounded-md font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex items-center justify-center rounded-md font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
 
 const variants: Record<Variant, string> = {
   default: "bg-brand text-ink-900 hover:brightness-95",

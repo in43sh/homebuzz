@@ -1,29 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { CategoryNav } from "@/lib/products";
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function MobileMenu({ categories }: { categories: CategoryNav[] }) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
-  // lock scroll + close on Escape while open
+  // While open: lock scroll, close on Escape, move focus in, trap Tab inside
+  // the drawer, and hand focus back to the hamburger when it closes.
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const trigger = triggerRef.current;
+    closeRef.current?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+      const items = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE);
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
+      trigger?.focus();
     };
   }, [open]);
 
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         aria-label="Open menu"
+        aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
         className="rounded p-1 hover:text-brand md:hidden"
@@ -40,14 +71,21 @@ export function MobileMenu({ categories }: { categories: CategoryNav[] }) {
 
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
-          {/* backdrop */}
+          {/* backdrop: pointer-only dismiss, hidden from keyboard and screen
+              readers (the X button inside the dialog is the accessible one) */}
           <button
-            aria-label="Close menu"
+            type="button"
+            tabIndex={-1}
+            aria-hidden="true"
             className="absolute inset-0 bg-ink-900/60"
             onClick={() => setOpen(false)}
           />
           {/* drawer — close when any link inside is activated */}
           <div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
             className="absolute inset-y-0 left-0 flex w-80 max-w-[85%] flex-col bg-slate-700 text-white shadow-xl"
             onClick={(e) => {
               if ((e.target as HTMLElement).closest("a")) setOpen(false);
@@ -58,6 +96,8 @@ export function MobileMenu({ categories }: { categories: CategoryNav[] }) {
                 base<span className="text-brand">hardware</span>
               </span>
               <button
+                ref={closeRef}
+                type="button"
                 aria-label="Close menu"
                 onClick={() => setOpen(false)}
                 className="rounded p-1 hover:text-brand"
@@ -79,7 +119,7 @@ export function MobileMenu({ categories }: { categories: CategoryNav[] }) {
                 name="q"
                 placeholder="Search products…"
                 aria-label="Search products"
-                className="w-full rounded-l-md bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-gray-500 focus:outline-none"
+                className="w-full rounded-l-md bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-gray-500 focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-slate-700"
               />
               <button
                 type="submit"

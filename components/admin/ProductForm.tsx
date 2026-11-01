@@ -77,7 +77,7 @@ export function ProductForm({
         <textarea
           {...register("description")}
           rows={3}
-          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:border-ink-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-900"
         />
       </label>
 

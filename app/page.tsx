@@ -14,13 +14,13 @@ export default async function Home() {
       {/* Hero */}
       <section className="bg-gray-200">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-20 md:py-28">
-          <p className="text-sm font-bold uppercase tracking-widest text-gray-500">
+          <p className="text-sm font-bold uppercase tracking-widest text-slate-700">
             Furniture Week
           </p>
           <h1 className="max-w-2xl text-4xl font-black leading-none text-ink-900 md:text-display">
             Everything for your home, in one place.
           </h1>
-          <p className="max-w-xl text-gray-500">
+          <p className="max-w-xl text-slate-700">
             More than 2 million items in store. Paint, tools, hardware and more —
             delivered fast, efficient and free.
           </p>

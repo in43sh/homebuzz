@@ -2,6 +2,7 @@
 
 - **Date:** 2026-07-05
 - **Scope:** Keyboard navigation, focus visibility, and color contrast (the "yellow-on-dark" concern from `docs/roadmap.md`).
+- **Status (2026-11-01):** findings 1–7 below are fixed. See Milestone 2 in [roadmap.md](../roadmap.md). The text below is the original audit and is kept unchanged.
 - **Method:** Static review of design tokens (`app/globals.css`), shared UI (`components/ui/`), navigation blocks (`components/blocks/`), and page-level usage. Contrast ratios computed per the WCAG 2.1 relative-luminance formula.
 
 ---

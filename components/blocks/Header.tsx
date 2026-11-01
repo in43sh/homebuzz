@@ -29,7 +29,7 @@ export async function Header() {
             name="q"
             placeholder="Search products…"
             aria-label="Search products"
-            className="w-full rounded-l-md bg-white px-4 py-2 text-ink-900 placeholder:text-gray-500 focus:outline-none"
+            className="w-full rounded-l-md bg-white px-4 py-2 text-ink-900 placeholder:text-gray-500 focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-slate-700"
           />
           <button
             type="submit"
