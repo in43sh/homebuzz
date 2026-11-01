@@ -1,16 +1,11 @@
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
-**Before any code change, complete these two prerequisite phases:**
+Before any code change, read the `next` version in `package.json`, then open the matching docs in `node_modules/next/dist/docs/` and follow the sections relevant to the change. Do not infer behavior from memory.
 
-1. **Check the installed Next.js version**: Open `package.json` and note the `next` version. If `node_modules/next/dist/docs/` does not exist, stop and run `npm install` first; do not infer behavior from memory.
-   - If `npm install` fails, stop and report the exact error.
-   - After `npm install`, verify that `node_modules/next/dist/docs/` exists and contains docs matching the version in `package.json`; if verification fails, stop and report the exact result.
-2. **Read version-specific docs**: Once dependencies are installed, open the Next.js docs in `node_modules/next/dist/docs/` that match the version in `package.json`.
-   - If no matching docs directory exists for the version in `package.json`, stop and report that the local docs are unavailable for that version; do not infer behavior from memory.
-   - Read the docs files in `node_modules/next/dist/docs/` that match the version in `package.json`, and follow only the sections relevant to the requested change before editing code.
+If `node_modules/next/dist/docs/` is missing, run `npm install`. If that fails, stop and report the exact error. If no docs match the `package.json` version, stop and report that the local docs are unavailable for that version.
 
-**Breaking changes**: APIs, conventions, and file structure may differ from your training data. Heed all deprecation notices in the docs.
+APIs, conventions, and file structure may differ from your training data. Heed all deprecation notices in the docs.
 <!-- END:nextjs-agent-rules -->
 
 ## Commands
