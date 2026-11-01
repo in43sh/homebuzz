@@ -38,7 +38,9 @@ export default async function CartPage({
     <div className="mx-auto max-w-7xl px-4 py-10">
       <div className="mb-8 flex items-baseline justify-between">
         <h1 className="text-heading font-black text-ink-900">Shopping cart</h1>
-        <span className="text-sm text-gray-500">{count} items</span>
+        <span className="text-sm text-gray-500">
+          {count} {count === 1 ? "item" : "items"}
+        </span>
       </div>
 
       {error === "stock" && (
@@ -67,7 +69,7 @@ export default async function CartPage({
                 )}
               </Link>
 
-              <div className="flex flex-1 flex-col">
+              <div className="flex min-w-0 flex-1 flex-col">
                 <Link
                   href={`/product/${item.slug}`}
                   className="font-bold text-ink-900 hover:text-slate-700"

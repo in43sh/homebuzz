@@ -76,7 +76,9 @@ export async function placeOrder(): Promise<
 
       const [order] = await tx
         .insert(orders)
-        .values({ userId, total: total.toFixed(2), status: "paid" })
+        // No payment is taken yet, so the order is "pending". "paid" is set
+        // once a payment provider confirms (see docs/audits/redesign_research.md).
+        .values({ userId, total: total.toFixed(2), status: "pending" })
         .returning({ id: orders.id });
 
       await tx.insert(orderItems).values(

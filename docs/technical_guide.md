@@ -96,7 +96,7 @@ sequenceDiagram
   A->>C: placeOrder() (lib/orders.ts)
   Note over C,DB: one transaction
   C->>DB: UPDATE products SET stock = stock - qty WHERE stock >= qty (per line)
-  C->>DB: INSERT orders(status='paid', total=subtotal*1.08)
+  C->>DB: INSERT orders(status='pending', total=subtotal*1.08)
   C->>DB: INSERT order_items (price snapshots)
   C->>DB: clearCart() (after commit)
   A->>U: redirect /account/orders/{id} (or /cart?error=stock if short)
@@ -110,7 +110,7 @@ Numbered walkthrough:
 4. The action calls `revalidatePath("/", "layout")` so the header cart count re-renders.
 5. **Sign in.** [components/auth/AuthForm.tsx](components/auth/AuthForm.tsx) calls Auth.js `signIn("credentials", …)`, then explicitly calls `mergeGuestCartAction()`.
 6. `mergeGuestCartIntoUser` folds the guest cart into the user's cart (summing shared products), deletes the guest cart, and clears the cookie.
-7. **Checkout.** [app/cart/page.tsx](app/cart/page.tsx)'s checkout button → `placeOrderAction` → `placeOrder` ([lib/orders.ts](lib/orders.ts)). In one transaction it decrements each line's `stock` (rejecting oversell), inserts an `orders` row with `status='paid'` and `total = subtotal × 1.08`, and inserts `order_items` (price snapshots); on commit it clears the cart and redirects to the order detail page (or back to `/cart?error=stock` if a line was short). See §6.4.
+7. **Checkout.** [app/cart/page.tsx](app/cart/page.tsx)'s checkout button → `placeOrderAction` → `placeOrder` ([lib/orders.ts](lib/orders.ts)). In one transaction it decrements each line's `stock` (rejecting oversell), inserts an `orders` row with `status='pending'` and `total = subtotal × 1.08`, and inserts `order_items` (price snapshots); on commit it clears the cart and redirects to the order detail page (or back to `/cart?error=stock` if a line was short). See §6.4.
 
 > See [walkthrough.md](walkthrough.md) for annotated, step-by-step traces of each of these flows.
 
@@ -295,17 +295,15 @@ Indexes: `products_slug_idx` (unique), `products_category_idx`.
 
 ### 5.8 Order status lifecycle
 
-The enum defines five states, but the code only ever **inserts `paid`**:
+The enum defines five states, but the code only ever **inserts `pending`** (no payment is taken):
 
 ```text
-pending ──(unused)──┐
-                    ▼
-   placeOrder() ─► paid ──► shipped ──► delivered   (shipped/delivered/cancelled
-                    │                                 are NOT reachable in code)
-                    └──► cancelled
+   placeOrder() ─► pending ──(unused)──► paid ──► shipped ──► delivered
+                      │                  (paid/shipped/delivered/cancelled
+                      └──► cancelled      are NOT reachable in code)
 ```
 
-> The `pending`, `shipped`, `delivered`, and `cancelled` states are **speculative** — no code transitions an order into them, and there is no admin order-management UI. Treat them as aspirational placeholders, not a wired state machine.
+> The `paid`, `shipped`, `delivered`, and `cancelled` states are **speculative** — no code transitions an order into them, and there is no admin order-management UI. Treat them as aspirational placeholders, not a wired state machine.
 
 ---
 
@@ -343,9 +341,9 @@ Lives in [lib/cart.ts](lib/cart.ts); mutations exposed via [app/actions/cart.ts]
 
 ### 6.4 Orders / Checkout
 
-[lib/orders.ts](lib/orders.ts) + [app/actions/orders.ts](app/actions/orders.ts). `placeOrder` requires a session and a non-empty cart, computes `total = subtotal × (1 + TAX_RATE)` where `TAX_RATE = 0.08`, then runs a **single transaction** that: (1) decrements each product's `stock` atomically via `UPDATE … SET stock = stock - qty WHERE id = ? AND stock >= qty` — a row only updates while enough remains, so concurrent checkouts can't oversell; (2) inserts the order **directly as `status='paid'`**; (3) snapshots line prices into `order_items`. If any line is short, an `OutOfStockError` rolls the whole transaction back and `placeOrder` returns `{ ok: false, reason: "out_of_stock", items }` — the cart is left intact and `placeOrderAction` redirects to `/cart?error=stock` (which renders an inline banner). On success the cart is cleared. `getOrder(id)` is **ownership-checked** (`WHERE id = … AND user_id = …`) so users can't read others' orders.
+[lib/orders.ts](lib/orders.ts) + [app/actions/orders.ts](app/actions/orders.ts). `placeOrder` requires a session and a non-empty cart, computes `total = subtotal × (1 + TAX_RATE)` where `TAX_RATE = 0.08`, then runs a **single transaction** that: (1) decrements each product's `stock` atomically via `UPDATE … SET stock = stock - qty WHERE id = ? AND stock >= qty` — a row only updates while enough remains, so concurrent checkouts can't oversell; (2) inserts the order **as `status='pending'`** (no payment is taken); (3) snapshots line prices into `order_items`. If any line is short, an `OutOfStockError` rolls the whole transaction back and `placeOrder` returns `{ ok: false, reason: "out_of_stock", items }` — the cart is left intact and `placeOrderAction` redirects to `/cart?error=stock` (which renders an inline banner). On success the cart is cleared. `getOrder(id)` is **ownership-checked** (`WHERE id = … AND user_id = …`) so users can't read others' orders.
 
-> **No real payment processing exists.** `placeOrder` marks orders paid unconditionally. Real payments (e.g. Stripe) + the accompanying webhooks/emails are planned future work (§17).
+> **No real payment processing exists.** `placeOrder` writes every order as `pending`; nothing ever sets `paid`. Real payments (e.g. Stripe) + the accompanying webhooks/emails are planned future work (§17).
 >
 > See [walkthrough.md — Checkout](walkthrough.md) for an end-to-end trace including the stock-check transaction.
 
@@ -523,7 +521,7 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 - **`.env.local`, not `.env`.** Both `drizzle.config.ts` and `db:seed` explicitly load `.env.local`; a `.env` file yields `DATABASE_URL is not set`.
 - **`db:push` needs a TTY** — it prompts interactively. Use `db:migrate` in any non-interactive context.
 - **`db:seed` clears orders/carts/reviews too, in FK-safe order.** [db/seed.ts](db/seed.ts) deletes `order_items` → `orders` → `cart_items` → `carts` → `reviews` before `products`/`categories`/`users`, since `orders.user_id` and `order_items.product_id` are `ON DELETE restrict`. Without that order, a reseed after any checkout would throw a restrict-violation (`23001`) on `db.delete(productsTable)`. Re-running `db:seed` is a full reset — it wipes order history, not just the catalog.
-- **Order states are mostly fiction.** Only `paid` is ever written; `pending`/`shipped`/`delivered`/`cancelled` have no transitions (§5.8).
+- **Order states are mostly fiction.** Only `pending` is ever written; `paid`/`shipped`/`delivered`/`cancelled` have no transitions (§5.8).
 - **`product_images` and `categories.parent_id` exist but are unused** by the current UI — tables/columns reserved for future galleries and subcategories.
 - **Category nav comes from the DB but there's no category CRUD.** `Header`/`MobileMenu`/`CategorySidebar`/`/store/[category]` all read `getCategories()` (the `categories` table) — but rows are only ever created by the seed; there is no admin UI to add/rename/delete a category. `lib/categories.ts` is now seed-and-`slugify`-only; don't wire it back into nav. **Exception:** [Footer](components/blocks/Footer.tsx) hardcodes two category links (`/store/paint-and-building-materials`, `/store/hardware`) — if those seed slugs ever change, the footer links 404 (`notFound()`).
 - **Deleting an ordered product is blocked, gracefully.** `order_items.product_id` is `ON DELETE restrict`, so a product that's been ordered can't be hard-deleted. `deleteProductAction` ([app/actions/admin.ts](app/actions/admin.ts)) catches the FK violation (`23503`) and returns `{ ok: false, error }`, which [DeleteProductButton](components/admin/DeleteProductButton.tsx) surfaces via `alert`. (`cart_items` and `reviews` cascade; only `order_items` blocks.) There's still no soft-delete/archive — an ordered product can only be edited, not removed.
@@ -548,7 +546,7 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 
 ## 17. Future Work
 
-1. **Real payments.** Replace the `status='paid'`-on-insert stub in `placeOrder` with a payment provider (e.g. Stripe), including the pre-payment `pending` state and post-payment confirmation. This is the next major piece.
+1. **Real payments.** Orders are written as `pending` (no payment is taken). Add a payment provider (e.g. Stripe) and set `paid` when it confirms payment. This is the next major piece.
 2. **Add-to-cart stock awareness.** Stock is now enforced at checkout (§6.4); a nicer flow would also surface remaining stock on the PDP and cap add-to-cart quantities up front.
 3. **Order lifecycle + admin order management.** Wire `shipped`/`delivered`/`cancelled` transitions and an admin UI to drive them.
 4. **Background work to accompany payments.** Payment webhooks and transactional email (order confirmations) — none exist today.

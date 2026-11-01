@@ -24,12 +24,15 @@ export function CartItemControls({
     });
 
   return (
-    <div className="flex items-center gap-3">
+    // Wraps on narrow screens: 44px controls plus Remove do not fit beside the
+    // image and price at 375px.
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <div className="flex items-center rounded-md border border-gray-200">
         <button
           aria-label="Decrease quantity"
-          disabled={pending}
-          className="h-8 w-8 text-lg font-bold text-ink-900 hover:bg-gray-200 disabled:opacity-50"
+          // At 1, "−" would silently remove the item; "Remove" does that on purpose.
+          disabled={pending || quantity <= 1}
+          className="h-11 w-11 text-lg font-bold text-ink-900 hover:bg-gray-200 disabled:opacity-50"
           onClick={() => update(quantity - 1)}
         >
           −
@@ -38,7 +41,7 @@ export function CartItemControls({
         <button
           aria-label="Increase quantity"
           disabled={pending}
-          className="h-8 w-8 text-lg font-bold text-ink-900 hover:bg-gray-200 disabled:opacity-50"
+          className="h-11 w-11 text-lg font-bold text-ink-900 hover:bg-gray-200 disabled:opacity-50"
           onClick={() => update(quantity + 1)}
         >
           +
@@ -46,7 +49,7 @@ export function CartItemControls({
       </div>
       <button
         disabled={pending}
-        className="text-sm text-gray-500 underline hover:text-ink-900 disabled:opacity-50"
+        className="inline-flex min-h-11 items-center px-1 text-sm text-gray-500 underline hover:text-ink-900 disabled:opacity-50"
         onClick={() =>
           startTransition(async () => {
             await removeItemAction(productId);
@@ -73,13 +76,16 @@ export function CartFooter() {
       </Button>
       <button
         disabled={pending}
-        className="mt-3 w-full text-center text-sm text-gray-500 underline hover:text-ink-900 disabled:opacity-50"
-        onClick={() => startTransition(async () => clearCartAction())}
+        className="mt-3 flex min-h-11 w-full items-center justify-center text-sm text-gray-500 underline hover:text-ink-900 disabled:opacity-50"
+        onClick={() => {
+          if (!window.confirm("Remove all items from your cart?")) return;
+          startTransition(async () => clearCartAction());
+        }}
       >
         Clear cart
       </button>
       <p className="mt-3 text-center text-xs text-gray-500">
-        Demo checkout — no payment is taken. Stripe lands later.
+        Demo store — no payment is taken.
       </p>
     </>
   );

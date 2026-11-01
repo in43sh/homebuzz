@@ -109,13 +109,13 @@ Status: **done 2026-11-01.** All five are fixed, plus two related findings (plac
 
 Today, order placement is one server action from the cart (`placeOrderAction`): no address, delivery, or review step, and no payment. This milestone replaces that.
 
-- [ ] Run the checkout part of the redesign research ([redesign_research_prompt.md](redesign_research_prompt.md), limited to the checkout walkthrough, evaluation, and gap analysis), with the report at `docs/audits/redesign_research.md`. Record the current step count as the baseline
-- [ ] Decide Stripe hosted checkout vs. Elements before designing the form: hosted checkout collects the shipping address itself, so a custom address form may be unnecessary
+- [x] Run the checkout part of the redesign research ([redesign_research_prompt.md](redesign_research_prompt.md), limited to the checkout walkthrough, evaluation, and gap analysis), with the report at `docs/audits/redesign_research.md`. Record the current step count as the baseline
+- [x] Decided 2026-11-01: a custom checkout page now, with Stripe added later as a payment step. Accounts stay required; fix the sign-in return path
 - [ ] Write an implementation plan from the research findings
 - [ ] Build the checkout page to the "Base Hardware - Checkout" Stitch screen: address, delivery method, order summary, place order
 - [ ] Add Stripe payment (see "Must-have before production")
 - [ ] Add the order confirmation step
-- [ ] The mockup promises "cancel within 1 hour of placing your order": confirm whether order cancellation exists, then build it or drop the line from the design
+- [x] Decided 2026-11-01: drop the "cancel within 1 hour" promise (cancellation does not exist). Regenerate the Stitch checkout screen without it
 
 Scope decision: shipping and tax use fixed demo values (Standard free, Express $12.99, a fixed tax percentage), not a real rate or tax service.
 

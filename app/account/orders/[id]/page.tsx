@@ -43,9 +43,12 @@ export default async function OrderDetailPage({
           {order.status}
         </span>
       </div>
-      <p className="mb-8 text-sm text-gray-500">
-        Placed {order.createdAt.toLocaleString()}
-      </p>
+      <div className="mb-8 space-y-1 text-sm text-gray-500">
+        <p>Placed {order.createdAt.toLocaleString()}</p>
+        {order.status === "pending" && (
+          <p>Demo store — no payment has been taken for this order.</p>
+        )}
+      </div>
 
       <ul className="divide-y divide-gray-200 border-y border-gray-200">
         {order.items.map((item) => (

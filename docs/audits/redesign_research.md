@@ -24,8 +24,9 @@ Chromium, slow-network pending states, a real server failure, sign-up to complet
 (it would create a user), Lighthouse, and the admin walkthrough. Pending states
 ("Placing order…") are cited from code, not observed.
 
-**Test data left in the dev database:** orders #2 and #3 on the demo account, and stock
-reduced by 2 (Glidden paint) and 1 (DeWalt drill). `npm run db:seed` resets it, but the
+**Test data left in the dev database:** orders #2, #3, and #4 on the demo account, and stock
+reduced by 3 (Glidden paint) and 1 (DeWalt drill). Order #4 was placed after the first fixes
+to confirm the new "pending" status. `npm run db:seed` resets it, but the
 seed script deletes **every** table before reloading (`db/seed.ts:20-27`), including any
 accounts or products you created yourself. I did not run it.
 
@@ -154,6 +155,33 @@ The existing backlog items (Lighthouse polish, rename leftovers) stay separate.
 6. **Free shipping threshold:** the product mockup says "Free shipping over $75". Build
    it, or keep Standard free for all orders?
 7. **"Buy now":** remove it, or make it a real one-step path into checkout?
+
+## Decisions and progress
+
+Decided by the owner on 2026-11-01:
+
+1. **A custom checkout page now, with Stripe added later.** The page follows the Stitch
+   screen, and Stripe is added as a payment step afterwards.
+2. **Accounts stay required.** Fix the sign-in return path (CK-05) instead of adding
+   guest checkout.
+3. **Drop the "cancel within 1 hour" promise.** The Stitch checkout screen still shows
+   it and needs regenerating without it.
+
+Still open: questions 4–7 above.
+
+Shipped so far (roadmap step 2, no schema change):
+
+| Finding | What changed |
+| --- | --- |
+| CK-03 | New orders are written as `pending`, and the order page says no payment was taken |
+| CK-10 | "−" is disabled at quantity 1, and "Clear cart" asks for confirmation |
+| CK-11 | Cart controls are at least 44px tall. The quantity controls wrap on narrow screens ([after](redesign_research_assets/after-step2-cart-mobile-375.png)) |
+| CK-12 | "1 item" is singular and the demo notice no longer mentions Stripe. "Buy now" is unchanged, pending question 7 |
+| CK-15 | The sign-up form states "At least 8 characters." before submit |
+
+Each change has an end-to-end test that was shown to fail when the change is undone.
+Order status has no automated test, because it would create an order on every run; it
+was checked by hand (order #4).
 
 ## Verification plan
 

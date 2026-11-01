@@ -61,7 +61,7 @@ orderId = await db.transaction(async (tx) => {
 
   // Step 2: insert the order row
   const [order] = await tx.insert(orders)
-    .values({ userId, total: total.toFixed(2), status: "paid" })
+    .values({ userId, total: total.toFixed(2), status: "pending" })
     .returning({ id: orders.id });
 
   // Step 3: snapshot the cart lines into order_items
@@ -100,7 +100,7 @@ Browser
                  ├─ getCart()           → read current cart items
                  └─ db.transaction()
                       ├─ UPDATE products SET stock = stock - qty WHERE stock >= qty  (× N lines)
-                      ├─ INSERT orders (status = 'paid', total = subtotal × 1.08)
+                      ├─ INSERT orders (status = 'pending', total = subtotal × 1.08)
                       └─ INSERT order_items (price snapshots from cart)
             ├─ clearCart()             → DELETE cart_items
             └─ redirect /account/orders/:id
