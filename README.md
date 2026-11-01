@@ -87,3 +87,15 @@ APIs differ from older releases. Before making code changes, read
 **[AGENTS.md](AGENTS.md)** — it documents the version-specific conventions, the
 two-database-URL setup (pooled app connection vs. direct migration connection),
 and other gotchas. Testing details live in [docs/testing.md](docs/testing.md).
+
+## Documentation
+
+- **[docs/technical_guide.md](docs/technical_guide.md)** — architecture, data model, and subsystems
+- **[docs/concepts.md](docs/concepts.md)** — the patterns this project uses, explained
+- **[docs/walkthrough.md](docs/walkthrough.md)** — end-to-end traces of each feature
+- **[docs/testing.md](docs/testing.md)** — how to run and write tests
+- **[docs/roadmap.md](docs/roadmap.md)** — shipped work and what's next
+- **[docs/backlog.md](docs/backlog.md)** — smaller follow-ups
+- **[docs/system-graph/](docs/system-graph/)** — interactive architecture map
+
+[AGENTS.md](AGENTS.md) has the complete index of docs and audits.
