@@ -51,6 +51,7 @@ Treat these as fixed. Do not ask the owner again.
 | Current name | Base Hardware, domain `basehardware.store` (unregistered on 2026-10-31, not yet bought). Already shipped on `main` |
 | Why Homebuzz was dropped | It sounded gimmicky. Avoid hype words, puns, and trendy suffixes |
 | Style | No two-word "X & Y" names. A brand word plus a plain category descriptor (like "Base Hardware") is fine |
+| Surname-style names | Acceptable, in the way Lowe's and Menards are named. They collide with real businesses often, so screen these early |
 | Intended use | Portfolio demo only, not a real business. A live conflicting trademark is still a hard fail, but no professional clearance is planned |
 | Social handles | Not needed. Skip handle checks entirely |
 | Domains | `.com`, `.shop`, or `.store` preferred. A missing domain does not rule out a really good name |
@@ -169,8 +170,9 @@ without copying any chain. Constraints:
 - Nothing gimmicky: no puns, hype words, or `-ify`, `-ly`, `-io` suffixes
 - No name whose distinctive element is already a benchmark chain's brand word
 - Spread across styles: an ordinary word plus a category word, a single brand
-  word, an invented word, and a plausible surname (flag surname-style names for
-  the owner's decision, since the owner has not ruled them in or out)
+  word, an invented word, and a plausible surname (allowed by the owner; a
+  common surname is likely already used by a real business, so run the business
+  search on these first)
 
 Log each name with its style and a one-line rationale. Drop any name that fails
 the Phase 3 measure badly or has an obvious bad meaning, with the reason. Reuse
@@ -246,8 +248,8 @@ Deliver a single report at `docs/naming_benchmark_research.md` with:
    result, and the date of each check
 6. **Rejected names** with reasons
 7. **Rename impact**, only if a challenger meets the decision rule
-8. **Assumptions and open questions:** for example, whether surname-style names
-   are acceptable
+8. **Assumptions and open questions:** for example, whether the owner is
+   comfortable with a surname that implies a founder who does not exist
 9. **Next steps:** the manual checks still needed (USPTO by hand, WIPO, the
    say-it-once test with two or three people), in order
 
