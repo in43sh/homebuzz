@@ -103,7 +103,7 @@ The five open findings from [accessibility_audit.md](audits/accessibility_audit.
 
 Done when: the five backlog items are closed and the Lighthouse accessibility check no longer reports the muted-text contrast failure.
 
-Status: **done 2026-11-01.** All five are fixed, plus two related findings (placeholder contrast and the duplicate "Close menu" label). Three more contrast failures on the home page surfaced during verification and are fixed too (hero text on gray, and the delivery banner heading on yellow). axe-core (WCAG 2.0/2.1 A and AA) reports no violations on 9 pages, and a keyboard walkthrough confirmed the skip link, the search focus ring, and the drawer (focus moves in, Tab stays inside, Escape restores focus). Four pages still list one "needs review" item for text over images, which automated tools cannot measure. Lighthouse was not re-run.
+Status: **done 2026-11-01.** All five are fixed, plus two related findings (placeholder contrast and the duplicate "Close menu" label). Three more contrast failures on the home page surfaced during verification and are fixed too (hero text on gray, and the delivery banner heading on yellow). axe-core (WCAG 2.0/2.1 A and AA) reports no violations on 9 pages, and a keyboard walkthrough confirmed the skip link, the search focus ring, and the drawer (focus moves in, Tab stays inside, Escape restores focus). Four pages still list one "needs review" item for text over images, which automated tools cannot measure. Lighthouse was not re-run. Regression tests now protect the fixes: an axe scan of 9 pages, keyboard tests for the skip link, search ring, and drawer, and a unit test of the token contrast (see [testing.md](testing.md#accessibility-tests)).
 
 ### Milestone 3 — Checkout
 

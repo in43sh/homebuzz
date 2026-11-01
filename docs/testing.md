@@ -28,13 +28,14 @@ npm run test:e2e -- --ui
 
 **Config:** [vitest.config.ts](../vitest.config.ts) — runs in `node` environment, resolves `@/` path aliases via `tsconfigPaths`.
 
-**What's covered (19 tests, 3 files):**
+**What's covered (26 tests, 4 files):**
 
 | File | Tests |
 | ---- | ----- |
 | `categories.test.ts` | `slugify()` — lowercasing, `&` expansion, edge-trimming, idempotency; seed categories list length + unique slugs |
 | `utils.test.ts` | `formatPrice()` — whole dollars, decimals, rounding; `cn()` — conditional classes, Tailwind conflict resolution |
 | `validation.test.ts` | All Zod schemas: `signInSchema`, `signUpSchema`, `reviewSchema`, `productSchema` (including the local-path rule for `image`) |
+| `contrast.test.ts` | WCAG contrast of the design tokens in `app/globals.css` (6 color pairs), and a check that a missing token fails loudly |
 
 ### What unit tests cover here
 
@@ -64,17 +65,19 @@ The `@/` alias resolves to the project root, same as in the app. No setup file i
 
 ## E2E tests — Playwright
 
-**Location:** `tests/e2e/shop.spec.ts`
+**Location:** `tests/e2e/` (`shop.spec.ts`, `accessibility.spec.ts`, `keyboard.spec.ts`)
 
 **Config:** [playwright.config.ts](../playwright.config.ts) — Chromium only, fully serial (`fullyParallel: false`), zero retries, auto-starts `npm run dev` on `localhost:3000` (`reuseExistingServer: true`).
 
-**What's covered (3 tests):**
+**What's covered (19 tests):**
 
 | Test | What it checks |
 | ---- | -------------- |
 | Browse catalog | Home page loads; "Popular Products" section is visible |
 | Search | `/store?q=drill` returns at least one product card |
 | Add to cart | Add a product from the PDP; cart page shows a non-zero total |
+| Axe scan (11 tests) | Nine pages at desktop width, plus home and product at 375px, have no WCAG 2.1 A/AA violations |
+| Keyboard (5 tests) | Skip link, search focus ring, and the mobile drawer (opens, traps Tab, restores focus). See [Accessibility tests](#accessibility-tests) |
 
 ### What E2E tests are for
 
@@ -97,6 +100,46 @@ test("user can sign in", async ({ page }) => {
 ```
 
 The dev database must be seeded (`npm run db:seed`) before running E2E tests that touch auth, cart, or orders — the seed provides the two test accounts (`demo@homebuzz.test` / `admin@homebuzz.test`, password `password1234`).
+
+---
+
+## Accessibility tests
+
+Added 2026-11-01 to protect the Milestone 2 fixes (see [roadmap.md](roadmap.md) and
+[audits/accessibility_audit.md](audits/accessibility_audit.md)). Three layers, from
+fastest to slowest:
+
+| Layer | File | Catches |
+| ----- | ---- | ------- |
+| Token contrast | `tests/unit/contrast.test.ts` | A color token edit that drops contrast below WCAG (4.5:1 text, 3:1 focus rings) |
+| Axe scan | `tests/e2e/accessibility.spec.ts` | Contrast, missing names, landmark, and ARIA problems on real rendered pages |
+| Keyboard | `tests/e2e/keyboard.spec.ts` | Behavior axe cannot see: focus order, focus rings, the drawer's focus handling |
+
+Run only these with `npm run test:e2e -- accessibility keyboard`.
+
+**Reading a failure.** The axe test prints the rule, a help link, the element selector,
+and for contrast failures the measured colors, for example
+`[#879095 on #ffffff = 3.25:1]`.
+
+**What is not covered:**
+
+- Screen-reader wording, reading order, and zoom or reflow. These need manual checks
+- Text over images. Axe lists these as "needs review" and the test attaches them to
+  the report without failing, because automated tools cannot measure them
+- Browsers other than Chromium, and pages behind sign-in (cart with items, account,
+  admin)
+
+**Troubleshooting: axe fails with old colors.** The tests run against the dev server,
+and its Turbopack cache in `.next/dev` can serve stale CSS after a token change made
+while no server was running. Symptom: contrast failures that show an old value (for
+example `#879095` for `gray-500`) while `app/globals.css` is correct. Fix: stop the
+dev server, delete `.next/dev` (a git-ignored cache), and rerun.
+
+**Proving the tests can fail.** Each test was checked by temporarily undoing the fix it
+protects (hero text back to `gray-500`, `gray-500` back to `#879095`, drawer
+`role="dialog"` removed, drawer focus restore removed, skip link removed, search ring
+color removed), confirming the matching test failed for the right reason, and
+restoring the file. Clear `.next/dev` before each such run.
 
 ---
 
