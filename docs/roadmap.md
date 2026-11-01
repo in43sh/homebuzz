@@ -121,6 +121,8 @@ Scope decision: shipping and tax use fixed demo values (Standard free, Express $
 
 Done when: the full flow (cart, checkout, payment, confirmation) has a passing e2e test, and the before/after step count is recorded in the research report.
 
+Progress (2026-11-01): the small truthfulness fixes and the stock and error work are shipped, with tests (see "Decisions and progress" in [redesign_research.md](audits/redesign_research.md)). Still to build: the sign-in return path, the checkout page with its data model, then Stripe.
+
 ### Milestone 4 — Production services
 
 - [ ] **Email** — order confirmation (needs the Milestone 3 confirmation step) and password reset
@@ -134,7 +136,7 @@ Details for each are under "Must-have before production".
 Candidates from the Stitch catalog and product-page screens. Check what already exists first (filter and pagination shipped in Slice 2), and let the redesign research decide which gaps matter.
 
 - [ ] Catalog filters and sort: price range, customer rating, in stock only, on sale; sort by price, rating, and newest
-- [ ] Stock states: "Only N left" and out-of-stock handling on cards and the product page
+- [x] Stock states: "Only N left" and out-of-stock handling on cards and the product page (done 2026-11-01, with the cart limits, as part of Milestone 3)
 - [ ] Related products ("You Might Also Need") on the product page
 - [ ] Reviews: sort order and a "Verified purchase" label (reviews are already purchase-gated)
 

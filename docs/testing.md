@@ -28,7 +28,7 @@ npm run test:e2e -- --ui
 
 **Config:** [vitest.config.ts](../vitest.config.ts) — runs in `node` environment, resolves `@/` path aliases via `tsconfigPaths`.
 
-**What's covered (26 tests, 4 files):**
+**What's covered (37 tests, 5 files):**
 
 | File | Tests |
 | ---- | ----- |
@@ -36,6 +36,7 @@ npm run test:e2e -- --ui
 | `utils.test.ts` | `formatPrice()` — whole dollars, decimals, rounding; `cn()` — conditional classes, Tailwind conflict resolution |
 | `validation.test.ts` | All Zod schemas: `signInSchema`, `signUpSchema`, `reviewSchema`, `productSchema` (including the local-path rule for `image`) |
 | `contrast.test.ts` | WCAG contrast of the design tokens in `app/globals.css` (6 color pairs), and a check that a missing token fails loudly |
+| `stock.test.ts` | Stock rules in `lib/stock.ts`: status labels, clamping quantities to stock, the product page picker, and cart line problems |
 
 ### What unit tests cover here
 
@@ -65,11 +66,11 @@ The `@/` alias resolves to the project root, same as in the app. No setup file i
 
 ## E2E tests — Playwright
 
-**Location:** `tests/e2e/` (`shop.spec.ts`, `accessibility.spec.ts`, `keyboard.spec.ts`)
+**Location:** `tests/e2e/` (`shop.spec.ts`, `accessibility.spec.ts`, `keyboard.spec.ts`, `cart.spec.ts`, `auth-forms.spec.ts`, `stock-and-errors.spec.ts`)
 
 **Config:** [playwright.config.ts](../playwright.config.ts) — Chromium only, fully serial (`fullyParallel: false`), zero retries, auto-starts `npm run dev` on `localhost:3000` (`reuseExistingServer: true`).
 
-**What's covered (19 tests):**
+**What's covered (32 tests):**
 
 | Test | What it checks |
 | ---- | -------------- |
@@ -78,6 +79,9 @@ The `@/` alias resolves to the project root, same as in the app. No setup file i
 | Add to cart | Add a product from the PDP; cart page shows a non-zero total |
 | Axe scan (11 tests) | Nine pages at desktop width, plus home and product at 375px, have no WCAG 2.1 A/AA violations |
 | Keyboard (5 tests) | Skip link, search focus ring, and the mobile drawer (opens, traps Tab, restores focus). See [Accessibility tests](#accessibility-tests) |
+| Cart (5 tests) | Singular "1 item", "−" disabled at 1, "Clear cart" asks first, a customer-safe demo notice, and (at 375px) no sideways scroll and 44px controls |
+| Auth forms (2 tests) | Sign-up states the password rule up front, and sign-in does not |
+| Stock and errors (5 tests) | "In stock" and the 1–5 picker, a cart status line for screen readers, the branded 404, and announced, focus-managed form errors |
 
 ### What E2E tests are for
 

@@ -20,11 +20,14 @@ import { Button } from "@/components/ui/Button";
 type Mode = "signin" | "signup";
 
 function Field({
+  id,
   label,
   error,
   hint,
   children,
 }: {
+  /** Field name; the error element's id is `${id}-error`. */
+  id: string;
   label: string;
   error?: string;
   /** A requirement shown before the user submits, so it is never a surprise. */
@@ -36,7 +39,15 @@ function Field({
       <span className="mb-1 block text-sm font-bold text-ink-900">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-gray-500">{hint}</span>}
-      {error && <span className="mt-1 block text-sm text-red-600">{error}</span>}
+      {error && (
+        <span
+          id={`${id}-error`}
+          role="alert"
+          className="mt-1 block text-sm text-red-600"
+        >
+          {error}
+        </span>
+      )}
     </label>
   );
 }
@@ -52,6 +63,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const {
     register,
     handleSubmit,
+    setFocus,
     formState: { errors, isSubmitting },
   } = form;
 
@@ -62,6 +74,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       const result = await registerUser(values);
       if (!result.ok) {
         setFormError(result.error);
+        setFocus("email");
         return;
       }
     }
@@ -74,6 +87,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
     if (res?.error) {
       setFormError("Invalid email or password");
+      setFocus("password"); // keep keyboard users in the form, ready to retry
       return;
     }
 
@@ -93,21 +107,37 @@ export function AuthForm({ mode }: { mode: Mode }) {
       </h1>
 
       {formError && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div
+          role="alert"
+          className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+        >
           {formError}
         </div>
       )}
 
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         {isSignUp && (
-          <Field label="Name" error={e.name?.message}>
-            <Input type="text" autoComplete="name" {...register("name")} />
+          <Field id="name" label="Name" error={e.name?.message}>
+            <Input
+              type="text"
+              autoComplete="name"
+              aria-invalid={!!e.name}
+              aria-describedby={e.name ? "name-error" : undefined}
+              {...register("name")}
+            />
           </Field>
         )}
-        <Field label="Email" error={e.email?.message}>
-          <Input type="email" autoComplete="email" {...register("email")} />
+        <Field id="email" label="Email" error={e.email?.message}>
+          <Input
+            type="email"
+            autoComplete="email"
+            aria-invalid={!!e.email}
+            aria-describedby={e.email ? "email-error" : undefined}
+            {...register("email")}
+          />
         </Field>
         <Field
+          id="password"
           label="Password"
           error={e.password?.message}
           hint={isSignUp ? "At least 8 characters." : undefined}
@@ -115,14 +145,24 @@ export function AuthForm({ mode }: { mode: Mode }) {
           <Input
             type="password"
             autoComplete={isSignUp ? "new-password" : "current-password"}
+            aria-invalid={!!e.password}
+            aria-describedby={e.password ? "password-error" : undefined}
             {...register("password")}
           />
         </Field>
         {isSignUp && (
-          <Field label="Confirm password" error={e.confirmPassword?.message}>
+          <Field
+            id="confirmPassword"
+            label="Confirm password"
+            error={e.confirmPassword?.message}
+          >
             <Input
               type="password"
               autoComplete="new-password"
+              aria-invalid={!!e.confirmPassword}
+              aria-describedby={
+                e.confirmPassword ? "confirmPassword-error" : undefined
+              }
               {...register("confirmPassword")}
             />
           </Field>

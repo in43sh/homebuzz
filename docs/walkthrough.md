@@ -27,7 +27,7 @@ export async function placeOrderAction() {
   const result = await placeOrder();
   if (!result.ok) {
     if (result.reason === "unauthenticated") redirect("/signin");
-    if (result.reason === "out_of_stock") redirect("/cart?error=stock");
+    // out of stock or empty: the cart page flags the exact lines from live stock
     return;
   }
   revalidatePath("/", "layout"); // clears header cart count

@@ -6,15 +6,12 @@ import { TAX_RATE } from "@/lib/orders";
 import { Button } from "@/components/ui/Button";
 import { CartItemControls, CartFooter } from "@/components/cart/CartControls";
 import { formatPrice } from "@/lib/utils";
+import { cartLineProblem } from "@/lib/stock";
+import { StockBadge } from "@/components/store/StockBadge";
 
 export const metadata: Metadata = { title: "Shopping cart" };
 
-export default async function CartPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const { error } = await searchParams;
+export default async function CartPage() {
   const { items, subtotal, count } = await getCart();
 
   if (items.length === 0) {
@@ -33,20 +30,37 @@ export default async function CartPage({
 
   const tax = subtotal * TAX_RATE;
   const total = subtotal + tax;
+  const noun = count === 1 ? "item" : "items";
+
+  // Derived from live stock on every render, so it can never go stale.
+  const problems = new Map(
+    items.flatMap((i) => {
+      const p = cartLineProblem(i.quantity, i.stock);
+      return p ? [[i.productId, p] as const] : [];
+    }),
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
       <div className="mb-8 flex items-baseline justify-between">
         <h1 className="text-heading font-black text-ink-900">Shopping cart</h1>
         <span className="text-sm text-gray-500">
-          {count} {count === 1 ? "item" : "items"}
+          {count} {noun}
         </span>
       </div>
 
-      {error === "stock" && (
-        <p className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          Some items are no longer in stock in the quantity you wanted. Adjust
-          the amounts and try again.
+      {/* Announces quantity changes to screen readers. */}
+      <p role="status" className="sr-only">
+        {count} {noun} in cart, total {formatPrice(total)}
+      </p>
+
+      {problems.size > 0 && (
+        <p
+          role="alert"
+          className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          Some items are not available in the quantity you chose. Fix the items
+          marked below to check out.
         </p>
       )}
 
@@ -79,10 +93,18 @@ export default async function CartPage({
                 <span className="text-sm text-gray-500">
                   {formatPrice(item.price)} / {item.unit}
                 </span>
+                {problems.has(item.productId) ? (
+                  <p className="text-sm font-bold text-red-700">
+                    {problems.get(item.productId)}
+                  </p>
+                ) : (
+                  <StockBadge stock={item.stock} hideWhenInStock />
+                )}
                 <div className="mt-auto">
                   <CartItemControls
                     productId={item.productId}
                     quantity={item.quantity}
+                    stock={item.stock}
                   />
                 </div>
               </div>
@@ -110,7 +132,7 @@ export default async function CartPage({
               <dd className="font-black text-ink-900">{formatPrice(total)}</dd>
             </div>
           </dl>
-          <CartFooter />
+          <CartFooter blocked={problems.size > 0} />
         </aside>
       </div>
     </div>

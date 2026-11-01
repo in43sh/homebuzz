@@ -5,6 +5,7 @@ import { Stars } from "./Stars";
 import { PricePer } from "./PricePer";
 import { Badge } from "@/components/ui/Badge";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
+import { StockBadge } from "@/components/store/StockBadge";
 
 export function ProductCard({ product }: { product: Product }) {
   return (
@@ -40,6 +41,7 @@ export function ProductCard({ product }: { product: Product }) {
       </Link>
 
       <PricePer price={product.price} unit={product.unit} className="mt-auto" />
+      <StockBadge stock={product.stock} hideWhenInStock />
 
       <AddToCartButton product={product} fullWidth className="mt-3" />
     </article>

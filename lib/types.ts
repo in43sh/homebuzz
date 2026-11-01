@@ -10,4 +10,6 @@ export type Product = {
   image: string;
   categorySlug: string;
   onSale?: boolean;
+  /** Units available. Only enforced at checkout until Stripe lands. */
+  stock: number;
 };

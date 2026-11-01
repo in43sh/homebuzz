@@ -99,7 +99,7 @@ sequenceDiagram
   C->>DB: INSERT orders(status='pending', total=subtotal*1.08)
   C->>DB: INSERT order_items (price snapshots)
   C->>DB: clearCart() (after commit)
-  A->>U: redirect /account/orders/{id} (or /cart?error=stock if short)
+  A->>U: redirect /account/orders/{id} (or /cart if short; the cart flags the lines)
 ```
 
 Numbered walkthrough:
@@ -392,7 +392,7 @@ Server Components fetch data; small Client Components own interactivity. **Serve
 | `/store` | [app/store/page.tsx](app/store/page.tsx) | Catalog; `?q=` search; sidebar of categories |
 | `/store/[category]` | [app/store/\[category\]/page.tsx](app/store/%5Bcategory%5D/page.tsx) | Category filter; `generateStaticParams` over the 15 categories; `notFound()` on bad slug |
 | `/product/[slug]` | [app/product/\[slug\]/page.tsx](app/product/%5Bslug%5D/page.tsx) | PDP: details, related, reviews; `generateStaticParams` over all product slugs |
-| `/cart` | [app/cart/page.tsx](app/cart/page.tsx) | Line items, qty controls, summary (`TAX_RATE` from `lib/orders`), checkout; shows a stock banner on `?error=stock` |
+| `/cart` | [app/cart/page.tsx](app/cart/page.tsx) | Line items, qty controls, summary (`TAX_RATE` from `lib/orders`), checkout; flags lines that exceed live stock (computed on render, from `lib/stock.ts`) and disables checkout until fixed |
 | `/account` | [app/account/page.tsx](app/account/page.tsx) | Auth-gated; profile + order history; sign-out via inline server action |
 | `/account/orders/[id]` | [app/account/orders/\[id\]/page.tsx](app/account/orders/%5Bid%5D/page.tsx) | Ownership-checked order detail; back-computes subtotal/tax from `total` |
 | `/admin/products` (+ `/new`, `/[id]/edit`) | [app/admin/products/](app/admin/products/) | Admin-gated CRUD; wraps `ProductForm` |
@@ -513,7 +513,7 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 
 - **Cart merge is client-triggered.** `mergeGuestCartIntoUser` is **not** an Auth.js `signIn` callback — [components/auth/AuthForm.tsx](components/auth/AuthForm.tsx) calls `mergeGuestCartAction()` right after `signIn`. If you add another login path, you must call the merge yourself or guest carts silently strand.
 - **`signIn` is intentionally client-side here.** NextAuth v5 (confirmed in the installed `next-auth@5.0.0-beta.31` type definitions) supports calling `signIn` from a Server Action: `await signIn("credentials", formData)` inside a `"use server"` function. The app does **not** use this pattern for three reasons: (1) server-side `signIn` always redirects or throws `AuthError` — there is no `redirect: false` option, so inline field errors are impossible; (2) the cart merge must run after the session is established but before the redirect, which the server action flow cannot accommodate; (3) per-field validation via `react-hook-form` would be lost. If you later add OAuth (GitHub, Google), the server action pattern is the right choice for those providers since they don't need error feedback or a cart merge.
-- **Stock is enforced only at checkout, not on add-to-cart.** `addItem` does not pre-check `products.stock` — the cart can hold more than exists. The atomic decrement in `placeOrder` (§6.4) is the real guard; an over-quantity cart fails checkout with the `?error=stock` banner rather than at add time.
+- **Stock is capped when items are added and still guarded at checkout.** `addItem` and `setItemQuantity` clamp to `products.stock` (`clampToStock` in `lib/stock.ts`), and the product page and cart show "In stock" / "Only N left". Stock can still drop after an item is in the cart, so the cart flags lines that exceed live stock, and the atomic decrement in `placeOrder` (§6.4) remains the real guard. Admin edits do not recheck existing carts.
 - **Cart quantities must be positive integers.** `addItem`/`setItemQuantity` ([lib/cart.ts](lib/cart.ts)) reject non-integer or `< 1` quantities (the former no-ops, the latter falls through to `removeItem`). This matters because Server Actions are callable directly with arbitrary arguments — without this guard, a crafted negative quantity would flow into `placeOrder`'s `gte(products.stock, i.quantity)` check (always true for negative numbers), letting a user inflate `products.stock` and produce a "paid" order with a negative total.
 - **Cart quantities are capped at 999.** `addItem`/`setItemQuantity` also reject quantities `> 999` (no-ops/clamp respectively). This prevents integer overflow on `cart_items.quantity` (Postgres `int4` max 2,147,483,647, but payloads built from untrusted quantity values can exceed it) and downstream numeric overflow in `placeOrder` when computing the order total (constrained to `numeric(10,2)` with max ~100M). Overflow would throw an uncaught Postgres error, crashing the cart or checkout action — the cap prevents that while remaining user-friendly.
 - **Emails are normalized to lowercase/trimmed at the schema layer.** `signInSchema`/`signUpSchema` ([lib/validation.ts](lib/validation.ts)) apply `.trim().toLowerCase()` before the `email()` check, so `users.email` lookups (`authorize`, `registerUser`) are case-insensitive going forward. Rows inserted *before* this change may still have mixed-case emails and won't match a lowercase login — there's no backfill migration for existing data.
@@ -547,7 +547,7 @@ Local values go in `.env.local` (loaded automatically by Next at runtime, and ex
 ## 17. Future Work
 
 1. **Real payments.** Orders are written as `pending` (no payment is taken). Add a payment provider (e.g. Stripe) and set `paid` when it confirms payment. This is the next major piece.
-2. **Add-to-cart stock awareness.** Stock is now enforced at checkout (§6.4); a nicer flow would also surface remaining stock on the PDP and cap add-to-cart quantities up front.
+2. **Add-to-cart stock awareness.** Done: stock is shown on the PDP, cards, and cart, and quantities are capped up front (see the stock pitfall above).
 3. **Order lifecycle + admin order management.** Wire `shipped`/`delivered`/`cancelled` transitions and an admin UI to drive them.
 4. **Background work to accompany payments.** Payment webhooks and transactional email (order confirmations) — none exist today.
 5. **Product image uploads + galleries.** Add real uploads (or configure `images.remotePatterns`) so images aren't limited to hand-placed `/public` files, then use the existing `product_images` table for PDP galleries.

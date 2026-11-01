@@ -9,7 +9,7 @@ export async function placeOrderAction() {
 
   if (!result.ok) {
     if (result.reason === "unauthenticated") redirect("/signin");
-    if (result.reason === "out_of_stock") redirect("/cart?error=stock");
+    // Out of stock (or empty): the cart page flags the exact lines from live stock.
     redirect("/cart");
   }
 

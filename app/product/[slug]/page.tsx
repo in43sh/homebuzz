@@ -8,6 +8,7 @@ import { getReviews, canReview } from "@/lib/reviews";
 import { auth } from "@/auth";
 import { Stars } from "@/components/store/Stars";
 import { PricePer } from "@/components/store/PricePer";
+import { StockBadge } from "@/components/store/StockBadge";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { ReviewForm } from "@/components/store/ReviewForm";
 import { Badge } from "@/components/ui/Badge";
@@ -124,6 +125,7 @@ export default async function ProductPage({
           </h1>
           <Stars rating={product.rating} count={product.ratingCount} />
           <PricePer price={product.price} unit={product.unit} />
+          <StockBadge stock={product.stock} />
           <p className="text-gray-500">{product.description}</p>
 
           <div className="mt-2">

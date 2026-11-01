@@ -26,7 +26,10 @@ Chromium, slow-network pending states, a real server failure, sign-up to complet
 
 **Test data left in the dev database:** orders #2, #3, and #4 on the demo account, and stock
 reduced by 3 (Glidden paint) and 1 (DeWalt drill). Order #4 was placed after the first fixes
-to confirm the new "pending" status. `npm run db:seed` resets it, but the
+to confirm the new "pending" status. While testing low stock I also edited the DeWalt drill in
+the admin screen (stock 3, then 1, then back to 99). Saving a product regenerates its URL slug
+(`lib/admin.ts:90`), so the drill's URL is now `/product/dewalt-20v-cordless-drill-kit`, not
+`…-kit-3`. `npm run db:seed` restores the original. `npm run db:seed` resets it, but the
 seed script deletes **every** table before reloading (`db/seed.ts:20-27`), including any
 accounts or products you created yourself. I did not run it.
 
@@ -179,9 +182,24 @@ Shipped so far (roadmap step 2, no schema change):
 | CK-12 | "1 item" is singular and the demo notice no longer mentions Stripe. "Buy now" is unchanged, pending question 7 |
 | CK-15 | The sign-up form states "At least 8 characters." before submit |
 
-Each change has an end-to-end test that was shown to fail when the change is undone.
-Order status has no automated test, because it would create an order on every run; it
-was checked by hand (order #4).
+Shipped in roadmap step 3 (stock and errors):
+
+| Finding | What changed |
+| --- | --- |
+| CK-07 | The product page, cards, and cart show "In stock", "Only N left", or "Out of stock". Quantities are capped at stock when added or changed, the product page picker offers only what exists, and out-of-stock items cannot be added ([screenshot](redesign_research_assets/after-step3-low-stock-product-page.png)) |
+| CK-06 | The stock error banner is gone. The cart now computes problems from live stock: it marks each affected line ("Only 1 left. Reduce the quantity to check out."), shows a summary, and disables Checkout until the cart is valid. The warning clears on its own once fixed ([screenshot](redesign_research_assets/after-step3-cart-over-stock-warning.png)) |
+| CK-08 | Form errors use `role="alert"`, fields get `aria-invalid` and `aria-describedby`, and focus returns to the password field after a failed sign-in (or the email field if the address is taken). The cart has a status line announcing item count and total |
+| CK-14 | A branded 404 with links back, an error page with "Try again" (using `unstable_retry`, per the Next.js 16 docs), and loading skeletons for the cart and order pages |
+
+Each change has an end-to-end or unit test that was shown to fail when the change is
+undone. Order status has no automated test, because it would create an order on every
+run; it was checked by hand (order #4). The low-stock flow was also checked by hand
+with a real stock change, because the automated tests do not write to the database.
+The error page itself is untested, because nothing in the app throws on demand.
+
+Remaining findings: CK-01, CK-02, CK-04, CK-13 (the checkout page and its data model),
+CK-05 (the sign-in return path), CK-09 (password reset, Milestone 4), and CK-16 (decided:
+drop the cancel promise). "Buy now" (question 7) is also still open.
 
 ## Verification plan
 

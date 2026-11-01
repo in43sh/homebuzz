@@ -22,13 +22,14 @@ export function AddToCartButton({
 }) {
   const [pending, startTransition] = useTransition();
   const [added, setAdded] = useState(false);
+  const outOfStock = product.stock <= 0;
 
   return (
     <Button
       variant={variant}
       size={size}
       className={`${fullWidth ? "w-full" : ""} ${className ?? ""}`}
-      disabled={pending}
+      disabled={pending || outOfStock}
       onClick={() =>
         startTransition(async () => {
           await addToCartAction(product.id, quantity);
@@ -37,7 +38,13 @@ export function AddToCartButton({
         })
       }
     >
-      {added ? "Added ✓" : pending ? "Adding…" : "Add to cart"}
+      {outOfStock
+        ? "Out of stock"
+        : added
+          ? "Added ✓"
+          : pending
+            ? "Adding…"
+            : "Add to cart"}
     </Button>
   );
 }

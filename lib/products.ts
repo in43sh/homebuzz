@@ -24,6 +24,7 @@ const selection = {
   ratingCount: products.ratingCount,
   image: products.image,
   onSale: products.onSale,
+  stock: products.stock,
   categorySlug: categories.slug,
 };
 
@@ -38,6 +39,7 @@ type Row = {
   ratingCount: number;
   image: string;
   onSale: boolean;
+  stock: number;
   categorySlug: string;
 };
 
@@ -54,6 +56,7 @@ function mapRow(r: Row): Product {
     image: r.image,
     categorySlug: r.categorySlug,
     onSale: r.onSale,
+    stock: r.stock,
   };
 }
 

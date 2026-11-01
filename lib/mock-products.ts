@@ -4,7 +4,7 @@ import { slugify } from "./categories";
 // Temporary in-memory catalog. Phase 2 replaces this module with Drizzle/Neon
 // queries — keep the function signatures stable so callers don't change.
 
-type Seed = Omit<Product, "id" | "slug" | "categorySlug"> & {
+type Seed = Omit<Product, "id" | "slug" | "categorySlug" | "stock"> & {
   category?: string;
 };
 
@@ -30,6 +30,7 @@ export const products: Product[] = seeds.map((s, i) => {
     id: String(i + 1),
     slug: `${slugify(s.title)}-${i + 1}`,
     categorySlug: slugify(category),
+    stock: 100, // matches db/seed.ts
   };
 });
 

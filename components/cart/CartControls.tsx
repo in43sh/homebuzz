@@ -12,9 +12,11 @@ import { placeOrderAction } from "@/app/actions/orders";
 export function CartItemControls({
   productId,
   quantity,
+  stock,
 }: {
   productId: string;
   quantity: number;
+  stock: number;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -40,7 +42,8 @@ export function CartItemControls({
         <span className="w-8 text-center text-sm">{quantity}</span>
         <button
           aria-label="Increase quantity"
-          disabled={pending}
+          // Cannot add more than is in stock.
+          disabled={pending || quantity >= stock}
           className="h-11 w-11 text-lg font-bold text-ink-900 hover:bg-gray-200 disabled:opacity-50"
           onClick={() => update(quantity + 1)}
         >
@@ -62,14 +65,14 @@ export function CartItemControls({
   );
 }
 
-export function CartFooter() {
+export function CartFooter({ blocked = false }: { blocked?: boolean }) {
   const [pending, startTransition] = useTransition();
   return (
     <>
       <Button
         variant="warning"
         className="mt-6 w-full"
-        disabled={pending}
+        disabled={pending || blocked}
         onClick={() => startTransition(async () => placeOrderAction())}
       >
         {pending ? "Placing order…" : "Checkout"}

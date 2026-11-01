@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { carts, cartItems, products } from "@/db/schema";
 import { auth } from "@/auth";
+import { clampToStock } from "@/lib/stock";
 
 const COOKIE = "cart_token";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -18,6 +19,8 @@ export type CartLine = {
   price: number;
   quantity: number;
   lineTotal: number;
+  /** Live stock, so the cart can flag lines that no longer fit. */
+  stock: number;
 };
 
 export type CartView = {
@@ -89,6 +92,7 @@ async function viewForCart(cartId: number): Promise<CartView> {
       image: products.image,
       unitPrice: cartItems.unitPrice,
       quantity: cartItems.quantity,
+      stock: products.stock,
     })
     .from(cartItems)
     .innerJoin(products, eq(cartItems.productId, products.id))
@@ -106,6 +110,7 @@ async function viewForCart(cartId: number): Promise<CartView> {
       price,
       quantity: r.quantity,
       lineTotal: price * r.quantity,
+      stock: r.stock,
     };
   });
 
@@ -130,11 +135,11 @@ export async function addItem(productId: number, quantity = 1): Promise<void> {
   if (!cartId) return;
 
   const [product] = await db
-    .select({ price: products.price })
+    .select({ price: products.price, stock: products.stock })
     .from(products)
     .where(eq(products.id, productId))
     .limit(1);
-  if (!product) return;
+  if (!product || product.stock <= 0) return;
 
   const [existing] = await db
     .select({ id: cartItems.id, quantity: cartItems.quantity })
@@ -143,7 +148,10 @@ export async function addItem(productId: number, quantity = 1): Promise<void> {
     .limit(1);
 
   if (existing) {
-    const newQty = Math.min(existing.quantity + quantity, MAX_QUANTITY);
+    const newQty = clampToStock(
+      Math.min(existing.quantity + quantity, MAX_QUANTITY),
+      product.stock,
+    );
     await db
       .update(cartItems)
       .set({ quantity: newQty })
@@ -152,7 +160,7 @@ export async function addItem(productId: number, quantity = 1): Promise<void> {
     await db.insert(cartItems).values({
       cartId,
       productId,
-      quantity,
+      quantity: clampToStock(quantity, product.stock),
       unitPrice: product.price,
     });
   }
@@ -170,7 +178,17 @@ export async function setItemQuantity(
     return;
   }
 
-  const capped = Math.min(quantity, MAX_QUANTITY);
+  const [product] = await db
+    .select({ stock: products.stock })
+    .from(products)
+    .where(eq(products.id, productId))
+    .limit(1);
+  // Never above what is in stock, so a shopper cannot cart more than exists.
+  const capped = clampToStock(Math.min(quantity, MAX_QUANTITY), product?.stock ?? 0);
+  if (capped <= 0) {
+    await removeItem(productId);
+    return;
+  }
   await db
     .update(cartItems)
     .set({ quantity: capped })

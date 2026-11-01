@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { addToCartAction } from "@/app/actions/cart";
+import { pickerQuantities } from "@/lib/stock";
 
 export function ProductPurchase({ product }: { product: Product }) {
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [pending, startTransition] = useTransition();
+  const quantities = pickerQuantities(product.stock);
+  const outOfStock = quantities.length === 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -22,9 +25,10 @@ export function ProductPurchase({ product }: { product: Product }) {
           id="qty"
           value={qty}
           onChange={(e) => setQty(Number(e.target.value))}
+          disabled={outOfStock}
           className="h-10 rounded-md border border-gray-200 bg-white px-3 text-sm"
         >
-          {[1, 2, 3, 4, 5].map((n) => (
+          {quantities.map((n) => (
             <option key={n} value={n}>
               {n}
             </option>
@@ -35,7 +39,7 @@ export function ProductPurchase({ product }: { product: Product }) {
       <div className="flex gap-3">
         <Button
           variant="default"
-          disabled={pending}
+          disabled={pending || outOfStock}
           onClick={() =>
             startTransition(async () => {
               await addToCartAction(product.id, qty);
@@ -48,7 +52,7 @@ export function ProductPurchase({ product }: { product: Product }) {
         </Button>
         <Button
           variant="outline"
-          disabled={pending}
+          disabled={pending || outOfStock}
           onClick={() =>
             startTransition(async () => {
               await addToCartAction(product.id, qty);
