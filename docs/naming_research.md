@@ -2,6 +2,14 @@
 
 Research run on 2026-10-31 from [naming_research_prompt.md](naming_research_prompt.md). No code was renamed, and no domain or account was registered.
 
+> **Correction (2026-11-01):** the screening below used one web search per name
+> and missed conflicts that the
+> [first alternate report](naming_research_2026-10-31.md) found. Plankwell,
+> Squarehouse, and Haldo each have an existing business in the field, and
+> Plumb & Post has a live `PLUM & POST` trademark. Base Hardware was also
+> rescored from 80 to 77. See
+> [naming_benchmark_research.md](naming_benchmark_research.md).
+
 ## Owner answers and assumptions
 
 | Question | Answer |
