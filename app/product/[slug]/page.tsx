@@ -9,6 +9,7 @@ import { auth } from "@/auth";
 import { Stars } from "@/components/store/Stars";
 import { PricePer } from "@/components/store/PricePer";
 import { StockBadge } from "@/components/store/StockBadge";
+import { authHref } from "@/lib/redirect";
 import { ProductGrid } from "@/components/store/ProductGrid";
 import { ReviewForm } from "@/components/store/ReviewForm";
 import { Badge } from "@/components/ui/Badge";
@@ -166,7 +167,10 @@ export default async function ProductPage({
 
           {!session?.user ? (
             <div className="h-fit rounded-lg border border-dashed border-gray-200 p-4 text-sm text-gray-500">
-              <Link href="/signin" className="font-bold text-ink-900 underline">
+              <Link
+                href={authHref("/signin", `/product/${product.slug}`)}
+                className="font-bold text-ink-900 underline"
+              >
                 Sign in
               </Link>{" "}
               to write a review.

@@ -121,7 +121,7 @@ Scope decision: shipping and tax use fixed demo values (Standard free, Express $
 
 Done when: the full flow (cart, checkout, payment, confirmation) has a passing e2e test, and the before/after step count is recorded in the research report.
 
-Progress (2026-11-01): the small truthfulness fixes and the stock and error work are shipped, with tests (see "Decisions and progress" in [redesign_research.md](audits/redesign_research.md)). Still to build: the sign-in return path, the checkout page with its data model, then Stripe.
+Progress (2026-11-01): the small truthfulness fixes and the stock and error work are shipped, with tests (see "Decisions and progress" in [redesign_research.md](audits/redesign_research.md)). The sign-in return path is shipped and "Buy now" is removed. Still to build: the checkout page with its data model, then Stripe.
 
 ### Milestone 4 — Production services
 

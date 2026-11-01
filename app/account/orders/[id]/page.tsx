@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { authHref } from "@/lib/redirect";
 import { auth } from "@/auth";
 import { getOrder, TAX_RATE } from "@/lib/orders";
 import { formatPrice } from "@/lib/utils";
@@ -13,10 +14,9 @@ export default async function OrderDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await auth();
-  if (!session?.user) redirect("/signin");
-
   const { id } = await params;
+  const session = await auth();
+  if (!session?.user) redirect(authHref("/signin", `/account/orders/${id}`));
   const orderId = Number(id);
   if (!Number.isFinite(orderId)) notFound();
 

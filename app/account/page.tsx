@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { authHref } from "@/lib/redirect";
 import { auth, signOut } from "@/auth";
 import { Button } from "@/components/ui/Button";
 import { getOrders } from "@/lib/orders";
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Your account" };
 
 export default async function AccountPage() {
   const session = await auth();
-  if (!session?.user) redirect("/signin");
+  if (!session?.user) redirect(authHref("/signin", "/account"));
 
   const { name, email, role } = session.user;
   const orders = await getOrders();

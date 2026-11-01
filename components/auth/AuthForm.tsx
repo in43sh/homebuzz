@@ -16,6 +16,7 @@ import { registerUser } from "@/app/actions/auth";
 import { mergeGuestCartAction } from "@/app/actions/cart";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { authHref } from "@/lib/redirect";
 
 type Mode = "signin" | "signup";
 
@@ -52,7 +53,17 @@ function Field({
   );
 }
 
-export function AuthForm({ mode }: { mode: Mode }) {
+export function AuthForm({
+  mode,
+  next = null,
+  notice,
+}: {
+  mode: Mode;
+  /** Where to go after signing in (already validated by the page). */
+  next?: string | null;
+  /** Why the user is here, for example when checkout needs an account. */
+  notice?: string;
+}) {
   const isSignUp = mode === "signup";
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
@@ -94,7 +105,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
     // Fold any guest cart into the now-authenticated user's cart.
     await mergeGuestCartAction();
 
-    router.push("/account");
+    router.push(next ?? "/account");
     router.refresh();
   });
 
@@ -105,6 +116,15 @@ export function AuthForm({ mode }: { mode: Mode }) {
       <h1 className="mb-6 text-heading font-black text-ink-900">
         {isSignUp ? "Create account" : "Sign in"}
       </h1>
+
+      {notice && (
+        <p
+          role="status"
+          className="mb-4 rounded-md border border-gray-200 bg-gray-200/50 p-3 text-sm text-ink-900"
+        >
+          {notice}
+        </p>
+      )}
 
       {formError && (
         <div
@@ -180,7 +200,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       <p className="mt-6 text-sm text-gray-500">
         {isSignUp ? "Already have an account? " : "No account yet? "}
         <Link
-          href={isSignUp ? "/signin" : "/signup"}
+          href={authHref(isSignUp ? "/signin" : "/signup", next, notice ? "checkout" : undefined)}
           className="font-bold text-ink-900 underline"
         >
           {isSignUp ? "Sign in" : "Create one"}

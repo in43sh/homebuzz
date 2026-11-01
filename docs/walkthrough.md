@@ -364,7 +364,7 @@ const res = await signIn("credentials", { email, password, redirect: false });
 if (res?.error) { setFormError("Invalid email or password"); return; }
 
 await mergeGuestCartAction(); // fold guest cart into the new session's cart
-router.push("/account");
+router.push(next ?? "/account"); // `next` is a validated same-site path (lib/redirect.ts)
 ```
 
 ### 2. `signIn` → `authorize` (server, inside Auth.js)
@@ -404,7 +404,7 @@ Browser
        └─ mergeGuestCartAction()      [Server Action — app/actions/cart.ts]
             └─ mergeGuestCartIntoUser()   [lib/cart.ts]
                  └─ fold guest cart_items → user cart, drop guest cart + cookie
-       └─ router.push("/account")
+       └─ router.push(next ?? "/account")
 ```
 
 > **Related:** [concepts.md — Auth.js](concepts.md#jwt-session-strategy--what-gets-stored-where) — how `id` and `role` flow through the JWT callbacks into the session. [technical_guide.md §15](technical_guide.md#15-gotchas) — why cart merge is client-triggered (not an Auth.js callback) and why `signIn` is deliberately client-side.

@@ -28,7 +28,7 @@ npm run test:e2e -- --ui
 
 **Config:** [vitest.config.ts](../vitest.config.ts) — runs in `node` environment, resolves `@/` path aliases via `tsconfigPaths`.
 
-**What's covered (37 tests, 5 files):**
+**What's covered (43 tests, 6 files):**
 
 | File | Tests |
 | ---- | ----- |
@@ -36,6 +36,7 @@ npm run test:e2e -- --ui
 | `utils.test.ts` | `formatPrice()` — whole dollars, decimals, rounding; `cn()` — conditional classes, Tailwind conflict resolution |
 | `validation.test.ts` | All Zod schemas: `signInSchema`, `signUpSchema`, `reviewSchema`, `productSchema` (including the local-path rule for `image`) |
 | `contrast.test.ts` | WCAG contrast of the design tokens in `app/globals.css` (6 color pairs), and a check that a missing token fails loudly |
+| `redirect.test.ts` | The sign-in return address: only same-site paths are accepted (open-redirect protection), and the link builder |
 | `stock.test.ts` | Stock rules in `lib/stock.ts`: status labels, clamping quantities to stock, the product page picker, and cart line problems |
 
 ### What unit tests cover here
@@ -66,11 +67,11 @@ The `@/` alias resolves to the project root, same as in the app. No setup file i
 
 ## E2E tests — Playwright
 
-**Location:** `tests/e2e/` (`shop.spec.ts`, `accessibility.spec.ts`, `keyboard.spec.ts`, `cart.spec.ts`, `auth-forms.spec.ts`, `stock-and-errors.spec.ts`)
+**Location:** `tests/e2e/` (`shop.spec.ts`, `accessibility.spec.ts`, `keyboard.spec.ts`, `cart.spec.ts`, `auth-forms.spec.ts`, `stock-and-errors.spec.ts`, `signin-return.spec.ts`)
 
 **Config:** [playwright.config.ts](../playwright.config.ts) — Chromium only, fully serial (`fullyParallel: false`), zero retries, auto-starts `npm run dev` on `localhost:3000` (`reuseExistingServer: true`).
 
-**What's covered (32 tests):**
+**What's covered (37 tests):**
 
 | Test | What it checks |
 | ---- | -------------- |
@@ -82,6 +83,7 @@ The `@/` alias resolves to the project root, same as in the app. No setup file i
 | Cart (5 tests) | Singular "1 item", "−" disabled at 1, "Clear cart" asks first, a customer-safe demo notice, and (at 375px) no sideways scroll and 44px controls |
 | Auth forms (2 tests) | Sign-up states the password rule up front, and sign-in does not |
 | Stock and errors (5 tests) | "In stock" and the 1–5 picker, a cart status line for screen readers, the branded 404, and announced, focus-managed form errors |
+| Sign-in return path (5 tests) | A guest who clicks Checkout is told why and returns to the cart after signing in, the create-account link keeps the return address, an off-site address is ignored, and the product page has no "Buy now". Signs in as the demo user and empties the cart afterwards |
 
 ### What E2E tests are for
 

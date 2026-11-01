@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { addToCartAction } from "@/app/actions/cart";
 import { pickerQuantities } from "@/lib/stock";
 
 export function ProductPurchase({ product }: { product: Product }) {
-  const router = useRouter();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -49,18 +47,6 @@ export function ProductPurchase({ product }: { product: Product }) {
           }
         >
           {added ? "Added ✓" : pending ? "Adding…" : "Add to cart"}
-        </Button>
-        <Button
-          variant="outline"
-          disabled={pending || outOfStock}
-          onClick={() =>
-            startTransition(async () => {
-              await addToCartAction(product.id, qty);
-              router.push("/cart");
-            })
-          }
-        >
-          Buy now
         </Button>
       </div>
     </div>

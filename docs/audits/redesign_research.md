@@ -197,9 +197,20 @@ run; it was checked by hand (order #4). The low-stock flow was also checked by h
 with a real stock change, because the automated tests do not write to the database.
 The error page itself is untested, because nothing in the app throws on demand.
 
+Shipped in roadmap step 4 (the sign-in return path):
+
+| Finding | What changed |
+| --- | --- |
+| CK-05 | A guest who clicks Checkout lands on "Sign in to place your order. Your cart is saved." and, after signing in, returns to the cart (the guest cart merges first). The same `next` return address is used by the account and order pages, the product page's review prompt, and the create-account link. Only same-site paths are accepted, so the sign-in page cannot be used as an open redirect |
+| Question 7 | "Buy now" is removed from the product page. It only went to the cart. It can return as a true one-step path once the checkout page exists |
+
+The guest path with an existing account is now **8 steps instead of 9**: product, Add to
+cart, Cart, Checkout (lands on the explained sign-in page), email, password, Sign in
+(lands back on the cart), Checkout. The two navigation steps after signing in (find the
+cart again, click Cart) are gone, and the guest is no longer sent to the wrong page.
+
 Remaining findings: CK-01, CK-02, CK-04, CK-13 (the checkout page and its data model),
-CK-05 (the sign-in return path), CK-09 (password reset, Milestone 4), and CK-16 (decided:
-drop the cancel promise). "Buy now" (question 7) is also still open.
+CK-09 (password reset, Milestone 4), and CK-16 (decided: drop the cancel promise).
 
 ## Verification plan
 
