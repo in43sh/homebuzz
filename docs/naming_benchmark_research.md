@@ -5,6 +5,12 @@ Research run on 2026-11-01 from
 was a research-only exercise: no code was changed, and no domain or account was
 registered.
 
+## Owner decision
+
+On 2026-11-01 the owner chose to **keep Base Hardware**. Still open: the
+say-it-once test and the manual USPTO check in [Next steps](#next-steps), and
+registering `basehardware.store`. No further naming research is planned.
+
 ## Executive summary
 
 **Recommendation: keep Base Hardware, and run two quick manual checks before
