@@ -107,21 +107,23 @@ Status: **done 2026-11-01.** All five are fixed, plus two related findings (plac
 
 ### Milestone 3 — Checkout
 
-Today, order placement is one server action from the cart (`placeOrderAction`): no address, delivery, or review step, and no payment. This milestone replaces that.
+Order placement used to be one server action from the cart: no address, delivery, or review step, and no payment. This milestone replaces that.
 
 - [x] Run the checkout part of the redesign research ([redesign_research_prompt.md](redesign_research_prompt.md), limited to the checkout walkthrough, evaluation, and gap analysis), with the report at `docs/audits/redesign_research.md`. Record the current step count as the baseline
 - [x] Decided 2026-11-01: a custom checkout page now, with Stripe added later as a payment step. Accounts stay required; fix the sign-in return path
-- [ ] Write an implementation plan from the research findings
-- [ ] Build the checkout page to the "Base Hardware - Checkout" Stitch screen: address, delivery method, order summary, place order
+- [x] Write an implementation plan from the research findings (the "Prioritized roadmap" in the research report)
+- [x] Build the checkout page to the "Base Hardware - Checkout" Stitch screen: address, delivery method, order summary, place order (done 2026-11-02)
 - [ ] Add Stripe payment (see "Must-have before production")
-- [ ] Add the order confirmation step
+- [x] Add the order confirmation step (a banner on the order page after placing, done 2026-11-02; the confirmation email is Milestone 4)
 - [x] Decided 2026-11-01: drop the "cancel within 1 hour" promise (cancellation does not exist). Regenerate the Stitch checkout screen without it
 
 Scope decision: shipping and tax use fixed demo values (Standard free, Express $12.99, a fixed tax percentage), not a real rate or tax service.
 
 Done when: the full flow (cart, checkout, payment, confirmation) has a passing e2e test, and the before/after step count is recorded in the research report.
 
-Progress (2026-11-01): the small truthfulness fixes and the stock and error work are shipped, with tests (see "Decisions and progress" in [redesign_research.md](audits/redesign_research.md)). The sign-in return path is shipped and "Buy now" is removed. Still to build: the checkout page with its data model, then Stripe.
+Progress (2026-11-01): the small truthfulness fixes and the stock and error work are shipped, with tests (see "Decisions and progress" in [redesign_research.md](audits/redesign_research.md)). The sign-in return path is shipped and "Buy now" is removed.
+
+Progress (2026-11-02): the checkout page is shipped. The cart's Checkout button now links to `/checkout`, which collects a shipping address and a delivery method and shows the order for review. Only "Place order" creates an order, and the order stores its subtotal, shipping, tax, total, delivery method and address as placed (migration `0001`). The order page shows a confirmation, the address and the stored totals. Still to build: Stripe payment, which will set `paid`.
 
 ### Milestone 4 — Production services
 

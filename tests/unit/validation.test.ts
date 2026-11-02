@@ -4,6 +4,7 @@ import {
   signUpSchema,
   reviewSchema,
   productSchema,
+  checkoutSchema,
 } from "@/lib/validation";
 
 describe("signInSchema", () => {
@@ -103,5 +104,53 @@ describe("productSchema", () => {
       productSchema.safeParse({ title: "", price: "5", categoryId: "1" })
         .success,
     ).toBe(false);
+  });
+});
+
+describe("checkoutSchema", () => {
+  const valid = {
+    name: "Alex Rivera",
+    line1: "123 Main St",
+    line2: "",
+    city: "Austin",
+    state: "TX",
+    zip: "78701",
+    phone: "",
+    deliveryMethod: "standard",
+  };
+
+  it("accepts a complete address", () => {
+    expect(checkoutSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("accepts ZIP+4, a phone with separators, and an apartment line", () => {
+    const r = checkoutSchema.safeParse({
+      ...valid,
+      zip: "78701-1234",
+      phone: "(512) 555-0100",
+      line2: "Apt 4B",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("trims whitespace", () => {
+    const r = checkoutSchema.parse({ ...valid, city: "  Austin  " });
+    expect(r.city).toBe("Austin");
+  });
+
+  it.each([
+    ["name", ""],
+    ["line1", "12"],
+    ["city", ""],
+    ["state", ""],
+    ["state", "ZZ"],
+    ["zip", "1234"],
+    ["zip", "abcde"],
+    ["phone", "12345"],
+    ["deliveryMethod", "overnight"],
+  ])("rejects %s = %j", (field, value) => {
+    const r = checkoutSchema.safeParse({ ...valid, [field]: value });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0].path[0]).toBe(field);
   });
 });

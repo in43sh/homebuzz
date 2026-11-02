@@ -21,6 +21,8 @@ export const orderStatus = pgEnum("order_status", [
   "cancelled",
 ]);
 
+export const deliveryMethod = pgEnum("delivery_method", ["standard", "express"]);
+
 export const categories = pgTable(
   "categories",
   {
@@ -119,7 +121,29 @@ export const orders = pgTable("orders", {
     .notNull()
     .references(() => users.id, { onDelete: "restrict" }),
   status: orderStatus("status").notNull().default("pending"),
+  // Money is stored as placed, so an order never changes if the tax rate or
+  // shipping prices do. subtotal + shippingCost + tax = total.
+  subtotal: numeric("subtotal", { precision: 10, scale: 2 })
+    .notNull()
+    .default("0"),
+  shippingCost: numeric("shipping_cost", { precision: 10, scale: 2 })
+    .notNull()
+    .default("0"),
+  tax: numeric("tax", { precision: 10, scale: 2 }).notNull().default("0"),
   total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+  deliveryMethod: deliveryMethod("delivery_method")
+    .notNull()
+    .default("standard"),
+  // Shipping address as entered at checkout, frozen on the order. Nullable
+  // because orders placed before checkout collected an address have none.
+  shippingName: text("shipping_name"),
+  shippingLine1: text("shipping_line1"),
+  shippingLine2: text("shipping_line2"),
+  shippingCity: text("shipping_city"),
+  shippingState: text("shipping_state"),
+  shippingZip: text("shipping_zip"),
+  shippingCountry: text("shipping_country"),
+  shippingPhone: text("shipping_phone"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

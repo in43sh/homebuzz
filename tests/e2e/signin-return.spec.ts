@@ -2,8 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 
 // The sign-in return path from the checkout research (finding CK-05). Signing in
 // as the seeded demo customer merges the guest cart into theirs, so every test
-// empties the cart afterwards (see afterEach). No test places
-// an order.
+// empties the cart afterwards (see afterEach). No test places an order.
 
 /** Adds the first catalog product and returns its title. */
 async function addFirstProduct(page: Page): Promise<string> {
@@ -35,14 +34,14 @@ test.describe("sign-in return path", () => {
     await clearCartIfAny(page);
   });
 
-  test("a guest who clicks Checkout is told why and returns to the cart after signing in", async ({
+  test("a guest who clicks Checkout is told why and returns to checkout after signing in", async ({
     page,
   }) => {
     const title = await addFirstProduct(page);
     await page.goto("/cart");
-    await page.getByRole("button", { name: "Checkout" }).click();
+    await page.getByRole("link", { name: "Checkout" }).click();
 
-    await expect(page).toHaveURL(/\/signin\?next=%2Fcart&reason=checkout/);
+    await expect(page).toHaveURL(/\/signin\?next=%2Fcheckout&reason=checkout/);
     await expect(
       page.getByText("Sign in to place your order. Your cart is saved."),
     ).toBeVisible();
@@ -51,17 +50,17 @@ test.describe("sign-in return path", () => {
     await page.getByLabel("Password").fill("password1234");
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    // Back at the cart, not the account page, with the item still there.
-    await expect(page).toHaveURL(/\/cart$/);
-    await expect(page.getByRole("link", { name: title }).first()).toBeVisible();
+    // Back at checkout, not the account page, with the item still there.
+    await expect(page).toHaveURL(/\/checkout$/);
+    await expect(page.getByText(title).first()).toBeVisible();
   });
 
   test("the create-account link keeps the return address", async ({ page }) => {
-    await page.goto("/signin?next=%2Fcart&reason=checkout");
+    await page.goto("/signin?next=%2Fcheckout&reason=checkout");
 
     await expect(page.getByRole("link", { name: "Create one" })).toHaveAttribute(
       "href",
-      "/signup?next=%2Fcart&reason=checkout",
+      "/signup?next=%2Fcheckout&reason=checkout",
     );
   });
 

@@ -6,38 +6,36 @@ Narrative traces of features end-to-end. Use these to see how the layers connect
 
 ## Checkout — from "Checkout" button to order in the database
 
-**Files touched:** `CartFooter` → `placeOrderAction` → `placeOrder` → DB transaction → `clearCart` → redirect
+**Files touched:** `CartFooter` → `/checkout` page → `CheckoutForm` → `placeOrderAction` → `placeOrder` → DB transaction → `clearCart` → redirect to the order page
 
-### 1. The button (browser)
+### 1. The button and the checkout page
 
-`CartFooter` is a Client Component inside `app/cart/page.tsx`:
+"Checkout" on the cart is a plain link to `/checkout`. It creates nothing. The page ([app/checkout/page.tsx](../app/checkout/page.tsx)) is a Server Component that sends a guest to sign-in (and back), an empty cart to `/cart`, and a cart with a line over its stock to `/cart`, where the problem is explained. Otherwise it renders `CheckoutForm` with the cart lines and the name from the session.
 
-```tsx
-// components/cart/CartControls.tsx
-<Button onClick={() => startTransition(async () => placeOrderAction())}>
-  Checkout
-</Button>
-```
+### 2. The form (browser)
 
-### 2. The action (server)
+`CheckoutForm` ([components/checkout/CheckoutForm.tsx](../components/checkout/CheckoutForm.tsx)) holds the shipping address and the delivery choice. It validates with `checkoutSchema` through react-hook-form, announces each error with `role="alert"`, and focuses the first bad field. The summary recomputes shipping and total from `computeTotals` (in [lib/pricing.ts](../lib/pricing.ts)) as the delivery choice changes. Those numbers are for display only.
+
+### 3. The action (server)
 
 ```ts
 // app/actions/orders.ts
-export async function placeOrderAction() {
-  const result = await placeOrder();
+export async function placeOrderAction(values: unknown) {
+  const parsed = checkoutSchema.safeParse(values); // the browser check can be bypassed
+  if (!parsed.success) return { ok: false, fieldErrors };
+  const result = await placeOrder(parsed.data);
   if (!result.ok) {
-    if (result.reason === "unauthenticated") redirect("/signin");
-    // out of stock or empty: the cart page flags the exact lines from live stock
-    return;
+    if (result.reason === "unauthenticated") redirect(authHref("/signin", "/checkout", "checkout"));
+    redirect("/cart"); // out of stock or empty: the cart page flags the exact lines
   }
   revalidatePath("/", "layout"); // clears header cart count
-  redirect(`/account/orders/${result.id}`);
+  redirect(`/account/orders/${result.id}?placed=1`);
 }
 ```
 
-Three possible outcomes: not logged in → signin page, stock failure → cart page with an error banner, success → order detail page.
+Outcomes: invalid fields → the form shows the errors, not logged in → sign-in and back to checkout, stock failure → cart page, success → the order page with a confirmation banner.
 
-### 3. `placeOrder` — the transaction (server)
+### 4. `placeOrder` — the transaction (server)
 
 Everything that matters happens inside a single database transaction:
 
@@ -59,9 +57,11 @@ orderId = await db.transaction(async (tx) => {
   }
   if (short.length > 0) throw new OutOfStockError(short); // rolls back everything
 
-  // Step 2: insert the order row
+  // Step 2: insert the order row. Totals come from the live cart, never the browser,
+  // and the address is copied onto the order so it stays as entered.
   const [order] = await tx.insert(orders)
-    .values({ userId, total: total.toFixed(2), status: "pending" })
+    .values({ userId, status: "pending", subtotal, shippingCost, tax, total,
+              deliveryMethod, shippingName, shippingLine1, /* … */ })
     .returning({ id: orders.id });
 
   // Step 3: snapshot the cart lines into order_items
@@ -80,7 +80,7 @@ orderId = await db.transaction(async (tx) => {
 
 The key is step 1: `WHERE stock >= quantity` means the `UPDATE` only succeeds if there's enough stock. If two users check out the last unit simultaneously, only one `UPDATE` will match — the other gets `updated.length === 0` and the whole transaction rolls back. No overselling is possible.
 
-### 4. After the transaction
+### 5. After the transaction
 
 ```ts
 await clearCart(); // deletes cart_items rows (the carts row stays)
@@ -93,17 +93,19 @@ The cart is cleared only after the transaction commits. If the transaction rolle
 
 ```text
 Browser
-  └─ CartFooter.onClick
-       └─ placeOrderAction()             [Server Action]
-            └─ placeOrder()             [lib/orders.ts]
-                 ├─ auth()              → verify session
-                 ├─ getCart()           → read current cart items
-                 └─ db.transaction()
-                      ├─ UPDATE products SET stock = stock - qty WHERE stock >= qty  (× N lines)
-                      ├─ INSERT orders (status = 'pending', total = subtotal × 1.08)
-                      └─ INSERT order_items (price snapshots from cart)
-            ├─ clearCart()             → DELETE cart_items
-            └─ redirect /account/orders/:id
+  └─ Cart "Checkout" link → /checkout          [Server Component: auth + cart guards]
+       └─ CheckoutForm submit
+            └─ placeOrderAction(values)           [Server Action: re-validates with checkoutSchema]
+                 └─ placeOrder(checkout)          [lib/orders.ts]
+                      ├─ auth()                   → verify session
+                      ├─ getCart()                → read current cart items
+                      ├─ computeTotals()          → subtotal, shipping, tax, total (cents)
+                      └─ db.transaction()
+                           ├─ UPDATE products SET stock = stock - qty WHERE stock >= qty  (× N lines)
+                           ├─ INSERT orders (status = 'pending', totals, delivery method, address)
+                           └─ INSERT order_items (price snapshots from cart)
+                 ├─ clearCart()                   → DELETE cart_items
+                 └─ redirect /account/orders/:id?placed=1   [confirmation banner]
 ```
 
 > **Related:** [concepts.md — The data model](concepts.md#why-cart_items-and-order_items-both-store-unit_price) — why both `cart_items` and `order_items` snapshot the price. [technical_guide.md §6.4](technical_guide.md#64-orders--checkout) — stock enforcement, `OutOfStockError`, and the no-payment stub.

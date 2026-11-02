@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { DELIVERY_METHOD_KEYS } from "@/lib/pricing";
+import { US_STATE_CODES } from "@/lib/us-states";
 
 export const signInSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
@@ -46,3 +48,31 @@ export const productSchema = z.object({
 
 export type ProductValues = z.infer<typeof productSchema>;
 export type ProductInput = z.input<typeof productSchema>;
+
+/** The shipping address and delivery choice collected at checkout. */
+export const checkoutSchema = z.object({
+  name: z.string().trim().min(2, "Enter the recipient's full name"),
+  line1: z.string().trim().min(3, "Enter a street address"),
+  line2: z.string().trim().max(100).optional().default(""),
+  city: z.string().trim().min(2, "Enter a city"),
+  state: z
+    .string()
+    .refine((v) => US_STATE_CODES.includes(v), { message: "Choose a state" }),
+  zip: z
+    .string()
+    .trim()
+    .regex(/^\d{5}(-\d{4})?$/, "Enter a 5-digit ZIP code, like 78701"),
+  // Optional; carriers use it for delivery. Digits and common separators only.
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .default("")
+    .refine((v) => v === "" || /^[\d\s()+.-]{10,20}$/.test(v), {
+      message: "Enter a phone number with area code, or leave it blank",
+    }),
+  deliveryMethod: z.enum(DELIVERY_METHOD_KEYS),
+});
+
+export type CheckoutValues = z.infer<typeof checkoutSchema>;
+export type CheckoutInput = z.input<typeof checkoutSchema>;

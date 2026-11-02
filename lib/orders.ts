@@ -4,8 +4,8 @@ import { db } from "@/db";
 import { orders, orderItems, products } from "@/db/schema";
 import { auth } from "@/auth";
 import { getCart, clearCart } from "@/lib/cart";
-
-export const TAX_RATE = 0.08;
+import { computeTotals } from "@/lib/pricing";
+import type { CheckoutValues } from "@/lib/validation";
 
 /** Thrown inside the checkout transaction to roll it back when stock is short. */
 class OutOfStockError extends Error {
@@ -13,6 +13,17 @@ class OutOfStockError extends Error {
     super("out_of_stock");
   }
 }
+
+export type ShippingAddress = {
+  name: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  phone: string;
+};
 
 export type OrderSummary = {
   id: number;
@@ -32,14 +43,23 @@ export type OrderLine = {
   lineTotal: number;
 };
 
-export type OrderDetail = OrderSummary & { items: OrderLine[] };
+export type OrderDetail = OrderSummary & {
+  items: OrderLine[];
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  deliveryMethod: "standard" | "express";
+  /** Null for orders placed before checkout collected an address. */
+  address: ShippingAddress | null;
+};
 
 /**
- * Turn the current user's cart into an order, then empty the cart. Stock is
+ * Turn the current user's cart into an order, then empty the cart. Totals are
+ * computed here from the live cart, never taken from the browser. Stock is
  * decremented atomically inside a transaction; if any line outruns its stock
  * the whole order rolls back and the cart is left intact.
  */
-export async function placeOrder(): Promise<
+export async function placeOrder(checkout: CheckoutValues): Promise<
   | { ok: true; id: number }
   | { ok: false; reason: "unauthenticated" | "empty" }
   | { ok: false; reason: "out_of_stock"; items: string[] }
@@ -51,7 +71,7 @@ export async function placeOrder(): Promise<
   if (cart.items.length === 0) return { ok: false, reason: "empty" };
 
   const userId = Number(session.user.id);
-  const total = cart.subtotal * (1 + TAX_RATE);
+  const totals = computeTotals(cart.subtotal, checkout.deliveryMethod);
 
   let orderId: number;
   try {
@@ -78,7 +98,23 @@ export async function placeOrder(): Promise<
         .insert(orders)
         // No payment is taken yet, so the order is "pending". "paid" is set
         // once a payment provider confirms (see docs/audits/redesign_research.md).
-        .values({ userId, total: total.toFixed(2), status: "pending" })
+        .values({
+          userId,
+          status: "pending",
+          subtotal: totals.subtotal.toFixed(2),
+          shippingCost: totals.shipping.toFixed(2),
+          tax: totals.tax.toFixed(2),
+          total: totals.total.toFixed(2),
+          deliveryMethod: checkout.deliveryMethod,
+          shippingName: checkout.name,
+          shippingLine1: checkout.line1,
+          shippingLine2: checkout.line2 || null,
+          shippingCity: checkout.city,
+          shippingState: checkout.state,
+          shippingZip: checkout.zip,
+          shippingCountry: "US",
+          shippingPhone: checkout.phone || null,
+        })
         .returning({ id: orders.id });
 
       await tx.insert(orderItems).values(
@@ -179,5 +215,21 @@ export async function getOrder(id: number): Promise<OrderDetail | null> {
     createdAt: order.createdAt,
     itemCount: items.reduce((n, i) => n + i.quantity, 0),
     items,
+    subtotal: Number(order.subtotal),
+    shipping: Number(order.shippingCost),
+    tax: Number(order.tax),
+    deliveryMethod: order.deliveryMethod,
+    address: order.shippingLine1
+      ? {
+          name: order.shippingName ?? "",
+          line1: order.shippingLine1,
+          line2: order.shippingLine2 ?? "",
+          city: order.shippingCity ?? "",
+          state: order.shippingState ?? "",
+          zip: order.shippingZip ?? "",
+          country: order.shippingCountry ?? "US",
+          phone: order.shippingPhone ?? "",
+        }
+      : null,
   };
 }

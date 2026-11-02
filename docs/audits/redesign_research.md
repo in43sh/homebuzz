@@ -209,8 +209,28 @@ cart, Cart, Checkout (lands on the explained sign-in page), email, password, Sig
 (lands back on the cart), Checkout. The two navigation steps after signing in (find the
 cart again, click Cart) are gone, and the guest is no longer sent to the wrong page.
 
-Remaining findings: CK-01, CK-02, CK-04, CK-13 (the checkout page and its data model),
-CK-09 (password reset, Milestone 4), and CK-16 (decided: drop the cancel promise).
+Shipped in roadmap step 5 (the checkout page and its data model, 2026-11-02):
+
+| Finding | What changed |
+| --- | --- |
+| CK-01, CK-02 | The cart's Checkout button is a link to `/checkout` and creates nothing. A page collects the shipping address and delivery method, shows the order, and only "Place order" creates it |
+| CK-04 | After placing, the order page opens with "Thank you. Your order is placed." (a status message), and says no payment was taken. The status stays `pending` until Stripe exists |
+| CK-13 | Orders store `subtotal`, `shipping_cost`, `tax`, `total`, `delivery_method` and the shipping address as placed, so a later change to the tax rate or shipping prices cannot change an old order. The server computes the totals from the cart (`lib/pricing.ts`) and ignores any number from the browser. Migration `0001` backfilled subtotal and tax on the old orders |
+
+Decisions made for this step: address fields are separate columns on `orders` with a
+`shipping_` prefix (nullable, because old orders have none), covering name, two street
+lines, city, state, ZIP, country (always US for now) and an optional phone. Standard
+delivery is always free and Express costs $12.99, so the mockup's "free over $75" line
+is not used. Saved addresses (Q5) are not built.
+
+The guest path with an existing account is now **8 steps to a placed order**: product,
+Add to cart, Cart, Checkout (lands on the explained sign-in page), email, password,
+Sign in (lands on checkout), Place order. The cart button no longer creates an order,
+so the order count is unchanged until "Place order", and the address step is added
+without adding a page for the shopper to find.
+
+Remaining findings: CK-09 (password reset, Milestone 4), and CK-16 (decided: drop the
+cancel promise). Stripe payment (CK-03 finishing) is step 6.
 
 ## Verification plan
 

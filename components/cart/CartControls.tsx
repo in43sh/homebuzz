@@ -7,7 +7,6 @@ import {
   removeItemAction,
   clearCartAction,
 } from "@/app/actions/cart";
-import { placeOrderAction } from "@/app/actions/orders";
 
 export function CartItemControls({
   productId,
@@ -69,14 +68,15 @@ export function CartFooter({ blocked = false }: { blocked?: boolean }) {
   const [pending, startTransition] = useTransition();
   return (
     <>
-      <Button
-        variant="warning"
-        className="mt-6 w-full"
-        disabled={pending || blocked}
-        onClick={() => startTransition(async () => placeOrderAction())}
-      >
-        {pending ? "Placing order…" : "Checkout"}
-      </Button>
+      {blocked ? (
+        <Button variant="warning" className="mt-6 w-full" disabled>
+          Checkout
+        </Button>
+      ) : (
+        <Button href="/checkout" variant="warning" className="mt-6 w-full">
+          Checkout
+        </Button>
+      )}
       <button
         disabled={pending}
         className="mt-3 flex min-h-11 w-full items-center justify-center text-sm text-gray-500 underline hover:text-ink-900 disabled:opacity-50"

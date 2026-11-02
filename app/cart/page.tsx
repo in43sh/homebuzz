@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getCart } from "@/lib/cart";
-import { TAX_RATE } from "@/lib/orders";
+import { computeTotals } from "@/lib/pricing";
 import { Button } from "@/components/ui/Button";
 import { CartItemControls, CartFooter } from "@/components/cart/CartControls";
 import { formatPrice } from "@/lib/utils";
@@ -28,8 +28,7 @@ export default async function CartPage() {
     );
   }
 
-  const tax = subtotal * TAX_RATE;
-  const total = subtotal + tax;
+  const { tax, total } = computeTotals(subtotal);
   const noun = count === 1 ? "item" : "items";
 
   // Derived from live stock on every render, so it can never go stale.

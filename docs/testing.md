@@ -28,13 +28,14 @@ npm run test:e2e -- --ui
 
 **Config:** [vitest.config.ts](../vitest.config.ts) — runs in `node` environment, resolves `@/` path aliases via `tsconfigPaths`.
 
-**What's covered (43 tests, 6 files):**
+**What's covered (60 tests, 7 files):**
 
 | File | Tests |
 | ---- | ----- |
 | `categories.test.ts` | `slugify()` — lowercasing, `&` expansion, edge-trimming, idempotency; seed categories list length + unique slugs |
 | `utils.test.ts` | `formatPrice()` — whole dollars, decimals, rounding; `cn()` — conditional classes, Tailwind conflict resolution |
-| `validation.test.ts` | All Zod schemas: `signInSchema`, `signUpSchema`, `reviewSchema`, `productSchema` (including the local-path rule for `image`) |
+| `validation.test.ts` | All Zod schemas: `signInSchema`, `signUpSchema`, `reviewSchema`, `productSchema` (including the local-path rule for `image`), `checkoutSchema` (ZIP, state, phone, delivery method) |
+| `pricing.test.ts` | Order totals in `lib/pricing.ts`: tax on goods only, Express price, rounding to the cent |
 | `contrast.test.ts` | WCAG contrast of the design tokens in `app/globals.css` (6 color pairs), and a check that a missing token fails loudly |
 | `redirect.test.ts` | The sign-in return address: only same-site paths are accepted (open-redirect protection), and the link builder |
 | `stock.test.ts` | Stock rules in `lib/stock.ts`: status labels, clamping quantities to stock, the product page picker, and cart line problems |
@@ -67,11 +68,11 @@ The `@/` alias resolves to the project root, same as in the app. No setup file i
 
 ## E2E tests — Playwright
 
-**Location:** `tests/e2e/` (`shop.spec.ts`, `accessibility.spec.ts`, `keyboard.spec.ts`, `cart.spec.ts`, `auth-forms.spec.ts`, `stock-and-errors.spec.ts`, `signin-return.spec.ts`)
+**Location:** `tests/e2e/` (`shop.spec.ts`, `accessibility.spec.ts`, `keyboard.spec.ts`, `cart.spec.ts`, `auth-forms.spec.ts`, `stock-and-errors.spec.ts`, `signin-return.spec.ts`, `checkout.spec.ts`)
 
-**Config:** [playwright.config.ts](../playwright.config.ts) — Chromium only, fully serial (`fullyParallel: false`), zero retries, auto-starts `npm run dev` on `localhost:3000` (`reuseExistingServer: true`).
+**Config:** [playwright.config.ts](../playwright.config.ts) — Chromium only, fully serial (`fullyParallel: false`, `workers: 1`, because several specs share the demo customer's cart), zero retries, auto-starts `npm run dev` on `localhost:3000` (`reuseExistingServer: true`).
 
-**What's covered (37 tests):**
+**What's covered (44 tests):**
 
 | Test | What it checks |
 | ---- | -------------- |
@@ -83,7 +84,8 @@ The `@/` alias resolves to the project root, same as in the app. No setup file i
 | Cart (5 tests) | Singular "1 item", "−" disabled at 1, "Clear cart" asks first, a customer-safe demo notice, and (at 375px) no sideways scroll and 44px controls |
 | Auth forms (2 tests) | Sign-up states the password rule up front, and sign-in does not |
 | Stock and errors (5 tests) | "In stock" and the 1–5 picker, a cart status line for screen readers, the branded 404, and announced, focus-managed form errors |
-| Sign-in return path (5 tests) | A guest who clicks Checkout is told why and returns to the cart after signing in, the create-account link keeps the return address, an off-site address is ignored, and the product page has no "Buy now". Signs in as the demo user and empties the cart afterwards |
+| Sign-in return path (5 tests) | A guest who clicks Checkout is told why and returns to checkout after signing in, the create-account link keeps the return address, an off-site address is ignored, and the product page has no "Buy now". Signs in as the demo user and empties the cart afterwards |
+| Checkout (7 tests) | An empty cart goes back to the cart; an empty form announces its errors and focuses the first bad field; Express adds $12.99; placing an order shows the confirmation, the saved address and totals, and empties the cart; axe finds no violations at desktop and 375px; no sideways scroll on a phone. **The place-order test creates a real order and takes one unit of stock**, so `npm run db:seed` resets the data (see [backlog.md](backlog.md)) |
 
 ### What E2E tests are for
 
@@ -157,7 +159,7 @@ These paths exist in code but have zero test coverage. They're the highest-value
 | ---- | ---- | ------------ |
 | Sign in / sign up / session | E2E | Credentials flow; duplicate email rejection; redirect after login |
 | Guest → user cart merge | E2E | Add as guest, sign in, verify items carry over |
-| Checkout / `placeOrder` | E2E + integration | Happy path, out-of-stock rollback, unauthenticated redirect |
+| `placeOrder` out-of-stock rollback | Integration | The happy path and the checkout form are covered by `checkout.spec.ts`; the rollback when stock runs short is not, because it needs two concurrent checkouts or a stock change in the database |
 | Order history, ownership check | E2E | `/account/orders/:id` visible to owner, 404 for other user |
 | Reviews + rating recompute | E2E | Purchase gate (non-buyer sees no form); submit updates star rating |
 | Admin CRUD + `isAdmin` guard | E2E | Create/edit/delete product; non-admin redirected to `/` |

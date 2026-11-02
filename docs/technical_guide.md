@@ -92,14 +92,14 @@ sequenceDiagram
   A->>C: mergeGuestCartIntoUser()
   C->>DB: fold guest cart_items into user cart, sum qty, drop guest cart + cookie
 
-  U->>A: placeOrderAction()
-  A->>C: placeOrder() (lib/orders.ts)
+  U->>A: placeOrderAction(address, delivery) from /checkout
+  A->>C: placeOrder(checkout) (lib/orders.ts)
   Note over C,DB: one transaction
   C->>DB: UPDATE products SET stock = stock - qty WHERE stock >= qty (per line)
-  C->>DB: INSERT orders(status='pending', total=subtotal*1.08)
+  C->>DB: INSERT orders(status='pending', subtotal, shipping_cost, tax, total, address)
   C->>DB: INSERT order_items (price snapshots)
   C->>DB: clearCart() (after commit)
-  A->>U: redirect /account/orders/{id} (or /cart if short; the cart flags the lines)
+  A->>U: redirect /account/orders/{id}?placed=1 (or /cart if short; the cart flags the lines)
 ```
 
 Numbered walkthrough:
@@ -110,7 +110,7 @@ Numbered walkthrough:
 4. The action calls `revalidatePath("/", "layout")` so the header cart count re-renders.
 5. **Sign in.** [components/auth/AuthForm.tsx](components/auth/AuthForm.tsx) calls Auth.js `signIn("credentials", …)`, then explicitly calls `mergeGuestCartAction()`.
 6. `mergeGuestCartIntoUser` folds the guest cart into the user's cart (summing shared products), deletes the guest cart, and clears the cookie.
-7. **Checkout.** [app/cart/page.tsx](app/cart/page.tsx)'s checkout button → `placeOrderAction` → `placeOrder` ([lib/orders.ts](lib/orders.ts)). In one transaction it decrements each line's `stock` (rejecting oversell), inserts an `orders` row with `status='pending'` and `total = subtotal × 1.08`, and inserts `order_items` (price snapshots); on commit it clears the cart and redirects to the order detail page (or back to `/cart?error=stock` if a line was short). See §6.4.
+7. **Checkout.** [app/cart/page.tsx](app/cart/page.tsx)'s checkout link → [app/checkout/page.tsx](app/checkout/page.tsx) (the address and delivery form) → `placeOrderAction` → `placeOrder` ([lib/orders.ts](lib/orders.ts)). In one transaction it decrements each line's `stock` (rejecting oversell), inserts an `orders` row with `status='pending'`, the subtotal, shipping, tax, total, delivery method and shipping address, and inserts `order_items` (price snapshots); on commit it clears the cart and redirects to the order detail page with a confirmation banner (or back to `/cart` if a line was short). See §6.4.
 
 > See [walkthrough.md](walkthrough.md) for annotated, step-by-step traces of each of these flows.
 
@@ -128,13 +128,14 @@ homebuzz/
 │   │   ├── admin.ts              # saveProductAction / deleteProductAction (admin-gated)
 │   │   ├── auth.ts               # registerUser (signup)
 │   │   ├── cart.ts               # add/setQty/remove/clear/mergeGuestCart
-│   │   ├── orders.ts             # placeOrderAction (checkout)
+│   │   ├── orders.ts             # placeOrderAction (validates and places the order)
 │   │   └── reviews.ts            # submitReviewAction
 │   ├── api/auth/[...nextauth]/route.ts  # Auth.js GET/POST handler (re-exported from auth.ts)
 │   ├── store/page.tsx            # Catalog + search (?q=)
 │   ├── store/[category]/page.tsx # Category-filtered catalog (statically generated params)
 │   ├── product/[slug]/page.tsx   # PDP: details, related, reviews, add-to-cart
-│   ├── cart/page.tsx             # Cart view + order summary + checkout
+│   ├── cart/page.tsx             # Cart view + order summary, links to checkout
+│   ├── checkout/page.tsx         # Address + delivery form, order review, place order
 │   ├── account/page.tsx          # Profile + order history (auth-gated)
 │   ├── account/orders/[id]/page.tsx  # Order detail (ownership-checked)
 │   ├── admin/layout.tsx          # Admin shell — redirects non-admins to /
@@ -156,7 +157,8 @@ homebuzz/
 │   └── migrations/               # drizzle-kit generated SQL + snapshots
 ├── lib/                          # Domain logic + queries (most are "server-only")
 │   ├── cart.ts                   # Cart resolution, items, guest→user merge
-│   ├── orders.ts                 # placeOrder, getOrders, getOrder; TAX_RATE
+│   ├── orders.ts                 # placeOrder, getOrders, getOrder
+│   ├── pricing.ts                # TAX_RATE, delivery prices, computeTotals (pure)
 │   ├── reviews.ts                # getReviews, upsertReview, rating recompute
 │   ├── admin.ts                  # isAdmin guard + product CRUD + slug uniqueness
 │   ├── products.ts               # Catalog queries + getCategories (NOT server-only)
@@ -278,7 +280,7 @@ Indexes: `products_slug_idx` (unique), `products_category_idx`.
 
 ### 5.6 `orders` & `order_items`
 
-`orders`: `id`, `user_id` (not null → `users.id` `restrict`), `status` (`order_status` default `pending`), `total` numeric(10,2), `created_at`.
+`orders`: `id`, `user_id` (not null → `users.id` `restrict`), `status` (`order_status` default `pending`), `subtotal`, `shipping_cost`, `tax`, `total` (all numeric(10,2), stored as placed so an order never changes if the tax rate or shipping prices do), `delivery_method` (`delivery_method` enum: `standard` | `express`), the shipping address as `shipping_name`, `shipping_line1`, `shipping_line2`, `shipping_city`, `shipping_state`, `shipping_zip`, `shipping_country`, `shipping_phone`, and `created_at`. The address columns are nullable because orders placed before the checkout page have none; new orders always fill them (the form requires everything except line 2 and phone). The address is a frozen copy on the order, not a link to a user profile, so it stays as entered. Migration `0001` added these columns and backfilled `subtotal` and `tax` for old orders from their totals.
 
 `order_items`: `id`, `order_id` (→ `orders.id` cascade), `product_id` (→ `products.id` `restrict`), `quantity`, `unit_price` (snapshot).
 
@@ -341,7 +343,7 @@ Lives in [lib/cart.ts](lib/cart.ts); mutations exposed via [app/actions/cart.ts]
 
 ### 6.4 Orders / Checkout
 
-[lib/orders.ts](lib/orders.ts) + [app/actions/orders.ts](app/actions/orders.ts). `placeOrder` requires a session and a non-empty cart, computes `total = subtotal × (1 + TAX_RATE)` where `TAX_RATE = 0.08`, then runs a **single transaction** that: (1) decrements each product's `stock` atomically via `UPDATE … SET stock = stock - qty WHERE id = ? AND stock >= qty` — a row only updates while enough remains, so concurrent checkouts can't oversell; (2) inserts the order **as `status='pending'`** (no payment is taken); (3) snapshots line prices into `order_items`. If any line is short, an `OutOfStockError` rolls the whole transaction back and `placeOrder` returns `{ ok: false, reason: "out_of_stock", items }` — the cart is left intact and `placeOrderAction` redirects to `/cart?error=stock` (which renders an inline banner). On success the cart is cleared. `getOrder(id)` is **ownership-checked** (`WHERE id = … AND user_id = …`) so users can't read others' orders.
+[lib/orders.ts](lib/orders.ts) + [app/actions/orders.ts](app/actions/orders.ts). `placeOrder(checkout)` requires a session and a non-empty cart, computes subtotal, shipping, tax and total with `computeTotals` in [lib/pricing.ts](lib/pricing.ts) (whole cents; tax is 8% of the goods only; Standard delivery is free and Express is $12.99), then runs a **single transaction** that: (1) decrements each product's `stock` atomically via `UPDATE … SET stock = stock - qty WHERE id = ? AND stock >= qty` — a row only updates while enough remains, so concurrent checkouts can't oversell; (2) inserts the order **as `status='pending'`** (no payment is taken) with the totals, delivery method and address; (3) snapshots line prices into `order_items`. If any line is short, an `OutOfStockError` rolls the whole transaction back and `placeOrder` returns `{ ok: false, reason: "out_of_stock", items }` — the cart is left intact and `placeOrderAction` redirects to `/cart`, where the page flags the short lines from live stock. `placeOrderAction` validates the form again with `checkoutSchema` before calling `placeOrder`, because the browser check can be bypassed, and never takes totals from the browser. On success the cart is cleared. `getOrder(id)` is **ownership-checked** (`WHERE id = … AND user_id = …`) so users can't read others' orders.
 
 > **No real payment processing exists.** `placeOrder` writes every order as `pending`; nothing ever sets `paid`. Real payments (e.g. Stripe) + the accompanying webhooks/emails are planned future work (§17).
 >
@@ -376,7 +378,7 @@ Server Actions (invoked via React, not fetched directly):
 | `registerUser` | actions/auth.ts | Public | Create account |
 | `addToCartAction` / `setQtyAction` / `removeItemAction` / `clearCartAction` | actions/cart.ts | Public (guest ok) | Cart mutations |
 | `mergeGuestCartAction` | actions/cart.ts | Auth (no-op if guest) | Fold guest cart on login |
-| `placeOrderAction` | actions/orders.ts | Auth (redirects to /signin) | Checkout |
+| `placeOrderAction` | actions/orders.ts | Auth (redirects to /signin) | Validate the checkout form, then place the order |
 | `submitReviewAction` | actions/reviews.ts | Auth (returns error if not) | Add/update review |
 | `saveProductAction` / `deleteProductAction` | actions/admin.ts | Admin (redirects to /) | Product CRUD |
 
@@ -392,9 +394,10 @@ Server Components fetch data; small Client Components own interactivity. **Serve
 | `/store` | [app/store/page.tsx](app/store/page.tsx) | Catalog; `?q=` search; sidebar of categories |
 | `/store/[category]` | [app/store/\[category\]/page.tsx](app/store/%5Bcategory%5D/page.tsx) | Category filter; `generateStaticParams` over the 15 categories; `notFound()` on bad slug |
 | `/product/[slug]` | [app/product/\[slug\]/page.tsx](app/product/%5Bslug%5D/page.tsx) | PDP: details, related, reviews; `generateStaticParams` over all product slugs |
-| `/cart` | [app/cart/page.tsx](app/cart/page.tsx) | Line items, qty controls, summary (`TAX_RATE` from `lib/orders`), checkout; flags lines that exceed live stock (computed on render, from `lib/stock.ts`) and disables checkout until fixed |
+| `/cart` | [app/cart/page.tsx](app/cart/page.tsx) | Line items, qty controls, summary (`computeTotals` from `lib/pricing`), a link to checkout; flags lines that exceed live stock (computed on render, from `lib/stock.ts`) and disables checkout until fixed |
 | `/account` | [app/account/page.tsx](app/account/page.tsx) | Auth-gated; profile + order history; sign-out via inline server action |
-| `/account/orders/[id]` | [app/account/orders/\[id\]/page.tsx](app/account/orders/%5Bid%5D/page.tsx) | Ownership-checked order detail; back-computes subtotal/tax from `total` |
+| `/account/orders/[id]` | [app/account/orders/\[id\]/page.tsx](app/account/orders/%5Bid%5D/page.tsx) | Ownership-checked order detail with the stored subtotal, shipping, tax and total, the shipping address, and a confirmation banner when opened with `?placed=1` |
+| `/checkout` | [app/checkout/page.tsx](app/checkout/page.tsx) | Signed-in only. Shipping address, delivery method (Standard or Express), order summary, "Place order". An empty cart or a line over its stock goes back to `/cart` |
 | `/admin/products` (+ `/new`, `/[id]/edit`) | [app/admin/products/](app/admin/products/) | Admin-gated CRUD; wraps `ProductForm` |
 | `/signin`, `/signup` | [app/signin/page.tsx](app/signin/page.tsx), [app/signup/page.tsx](app/signup/page.tsx) | Render shared `AuthForm` |
 | `/help`, `/privacy` | [app/help/page.tsx](app/help/page.tsx), [app/privacy/page.tsx](app/privacy/page.tsx) | Static content |

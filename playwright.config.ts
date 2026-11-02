@@ -5,6 +5,9 @@ const BASE_URL = "http://localhost:3000";
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
+  // One worker: several specs sign in as the same demo customer and share a
+  // cart, so spec files must not run side by side.
+  workers: 1,
   retries: 0,
   use: {
     baseURL: BASE_URL,

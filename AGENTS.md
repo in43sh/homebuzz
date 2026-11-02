@@ -40,6 +40,7 @@ app/             # Route segments (App Router)
   store/           # Storefront: store/, store/[category]/
   product/[slug]/  # Product detail + reviews
   cart/            # Cart page
+  checkout/        # Checkout: shipping address, delivery method, place order
   account/         # Account and order history (account/orders/[id])
   signin/ signup/ help/ privacy/  # Auth and static pages
 components/      # ui/ primitives, plus admin, auth, cart, store, blocks
